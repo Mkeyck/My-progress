@@ -1,0 +1,1786 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Моя прогрессия</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Прогрессия">
+    <meta name="theme-color" content="#030308">
+    <link rel="manifest" href="/My-progress/manifest.json">
+    <link rel="apple-touch-icon" href="/My-progress/icon-192.png">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg-deep: radial-gradient(ellipse at 50% 45%, #0a0c14 0%, #020205 100%);
+            --bg-card: rgba(10,12,20,0.2); --bg-card-hover: rgba(10,12,20,0.3);
+            --bg-level: rgba(0,0,0,0.2); --bg-level-hover: rgba(0,0,0,0.3);
+            --bg-task: rgba(0,0,0,0.2); --bg-task-hover: rgba(0,0,0,0.3);
+            --bg-calendar: rgba(0,0,0,0.2);
+            --text-primary: #f0f2f8; --text-secondary: #c0c4d0; --text-muted: #b0b4c0;
+            --border-light: rgba(255,255,255,0.08); --border-task: rgba(255,255,255,0.06);
+            --ring-color: rgba(200,210,240,0.35); --bar-color: rgba(200,210,230,0.2);
+            --sphere-color: rgba(220,230,250,0.18); --dot-color: rgba(220,230,250,0.5);
+            --vignette: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(0,0,0,0.5) 100%);
+            --overlay: rgba(3,3,8,0.25); --modal-bg: #121620; --input-bg: #0a0c14;
+            --danger: #c44; --danger-light: rgba(204,68,68,0.2);
+            --ios-green: #34c759; --success: #2a8a5e;
+        }
+        body.light {
+            --bg-deep: radial-gradient(ellipse at 50% 45%, #e8e8ec 0%, #d0d0d8 100%);
+            --bg-card: rgba(240,240,245,0.7); --bg-card-hover: rgba(240,240,245,0.85);
+            --bg-level: rgba(0,0,0,0.05); --bg-level-hover: rgba(0,0,0,0.1);
+            --bg-task: rgba(0,0,0,0.04); --bg-task-hover: rgba(0,0,0,0.08);
+            --bg-calendar: rgba(0,0,0,0.04);
+            --text-primary: #1a1c24; --text-secondary: #4a4e58; --text-muted: #6a6e78;
+            --border-light: rgba(0,0,0,0.08); --border-task: rgba(0,0,0,0.06);
+            --ring-color: rgba(80,90,110,0.25); --bar-color: rgba(80,90,110,0.15);
+            --sphere-color: rgba(80,90,110,0.12); --dot-color: rgba(80,90,110,0.4);
+            --vignette: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(255,255,255,0.3) 100%);
+            --overlay: rgba(255,255,255,0.3); --modal-bg: #f0f0f5; --input-bg: #ffffff; --danger: #a33;
+        }
+        body { background: #030308; min-height: 100vh; display: flex; justify-content: center; align-items: center; font-family: 'Inter', sans-serif; transition: background 0.3s; padding: max(32px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+        body.light { background: #d8d8e0; }
+
+        .deep-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background: var(--bg-deep); overflow: hidden; transition: background 0.3s; }
+        .camera-zoom { animation: zoom 25s ease-in-out infinite alternate; height: 100%; width: 100%; }
+        @keyframes zoom { 0% { transform: scale(1); } 100% { transform: scale(1.02); } }
+        .ring { position: absolute; border-radius: 50%; animation: pulseRing 10s ease-in-out infinite; }
+        .ring-c { transform: translate(-50%,-50%); top: 50%; left: 50%; }
+        .ring-c1 { width: 25vw; height: 25vw; border: 2px solid var(--ring-color); box-shadow: 0 0 15px var(--ring-color); }
+        .ring-c2 { width: 40vw; height: 40vw; border: 1.5px solid var(--ring-color); animation-delay: -2s; }
+        .ring-c3 { width: 55vw; height: 55vw; border: 1px solid var(--ring-color); animation-delay: -4s; }
+        .ring-c4 { width: 70vw; height: 70vw; border: 0.8px solid var(--ring-color); animation-delay: -6s; }
+        .ring-tl { top:5%;left:3%;width:120px;height:120px;border:1.5px solid var(--ring-color);animation-duration:12s;animation-delay:-1s; }
+        .ring-tr { top:5%;right:3%;width:100px;height:100px;border:1.5px solid var(--ring-color);animation-duration:14s;animation-delay:-3s; }
+        .ring-bl { bottom:8%;left:5%;width:140px;height:140px;border:1.2px solid var(--ring-color);animation-duration:11s;animation-delay:-5s; }
+        .ring-br { bottom:5%;right:4%;width:110px;height:110px;border:1.3px solid var(--ring-color);animation-duration:13s;animation-delay:-2.5s; }
+        @keyframes pulseRing { 0%{opacity:0.2;transform:scale(0.96);}50%{opacity:0.65;transform:scale(1.04);}100%{opacity:0.2;transform:scale(0.96);} }
+        .ring-tl,.ring-tr,.ring-bl,.ring-br { animation-name: pulseCorner; }
+        @keyframes pulseCorner { 0%{opacity:0.15;transform:scale(0.92);}50%{opacity:0.55;transform:scale(1.08);}100%{opacity:0.15;transform:scale(0.92);} }
+        .bar { position:absolute;left:0;width:100%;background:linear-gradient(90deg,transparent,var(--bar-color),var(--bar-color),transparent);animation:flow 15s linear infinite; }
+        .b1{top:12%;height:0.8px;animation-duration:18s;}.b2{top:25%;height:1px;animation-duration:22s;animation-delay:-4s;}
+        .b3{top:40%;height:0.6px;animation-duration:14s;animation-delay:-7s;}.b4{top:52%;height:0.8px;animation-duration:20s;animation-delay:-10s;}
+        .b5{top:68%;height:0.5px;animation-duration:16s;animation-delay:-3s;}.b6{top:82%;height:0.7px;animation-duration:24s;animation-delay:-6s;}
+        @keyframes flow{0%{background-position:-100% 0;opacity:0.1;}25%{opacity:0.35;}75%{opacity:0.35;}100%{background-position:200% 0;opacity:0.1;}}
+        .sphere{position:absolute;border-radius:50%;animation:float 30s ease-in-out infinite;background:radial-gradient(circle,var(--sphere-color) 0%,var(--sphere-color) 40%,transparent 80%);}
+        .s1{width:180px;height:180px;top:12%;left:5%;animation-duration:28s;}.s2{width:260px;height:260px;bottom:8%;right:2%;animation-duration:32s;animation-delay:-6s;}
+        .s3{width:130px;height:130px;top:45%;left:82%;animation-duration:22s;animation-delay:-10s;}.s4{width:300px;height:300px;bottom:15%;left:-5%;animation-duration:36s;animation-delay:-14s;}
+        .s5{width:90px;height:90px;top:68%;left:18%;animation-duration:20s;animation-delay:-4s;}
+        @keyframes float{0%{transform:translate(0,0) scale(1);opacity:0.5;}33%{transform:translate(1.5%,-1.5%) scale(1.03);opacity:0.8;}66%{transform:translate(-1%,1%) scale(0.98);opacity:0.6;}100%{transform:translate(0,0) scale(1);opacity:0.5;}}
+        .dot{position:absolute;width:2px;height:2px;background:var(--dot-color);border-radius:50%;animation:dotPulse 6s ease-in-out infinite alternate;}
+        @keyframes dotPulse{0%{opacity:0.1;transform:scale(1);}100%{opacity:0.7;transform:scale(2.5);}}
+        .d1{top:18%;left:25%;}.d2{top:35%;left:75%;animation-delay:-1.5s;}.d3{top:60%;left:15%;animation-delay:-3s;}
+        .d4{top:75%;left:65%;animation-delay:-4.5s;}.d5{top:82%;left:40%;animation-delay:-2s;}.d6{top:28%;left:88%;animation-delay:-5s;}
+        .d7{top:48%;left:8%;animation-delay:-3.5s;}.d8{top:92%;left:80%;animation-delay:-1s;}
+        .vignette{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--vignette);pointer-events:none;z-index:0;}
+        .overlay-dark{position:fixed;top:0;left:0;width:100%;height:100%;background:var(--overlay);pointer-events:none;z-index:1;}
+
+        .card,.menu-btn,.sidebar,.theme-toggle{position:relative;z-index:2;}
+        .card{max-width:760px;width:100%;background:var(--bg-card);backdrop-filter:blur(8px);border-radius:56px;padding:40px 36px 44px;border:1px solid var(--border-light);transition:all 0.3s;}
+        .card:hover{background:var(--bg-card-hover);}
+        h1{font-size:32px;font-weight:500;letter-spacing:-0.5px;text-align:center;background:linear-gradient(135deg,var(--text-primary),var(--text-secondary));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:8px;}
+
+        .level-box{background:var(--bg-level);backdrop-filter:blur(4px);border-radius:40px;padding:32px 28px;margin:32px 0 48px;width:85%;border:1px solid var(--border-light);transition:0.2s;cursor:pointer;}
+        .level-box:hover{transform:translateY(-2px);background:var(--bg-level-hover);}
+        .level-label{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:2.5px;color:var(--text-muted);margin-bottom:12px;}
+        .level-badge{font-size:56px;font-weight:600;background:linear-gradient(135deg,var(--text-primary),var(--text-secondary));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1;margin-bottom:16px;}
+        .xp-text{font-size:14px;color:var(--text-secondary);margin-bottom:20px;}
+        .progress-container{background:#2a2e38;border-radius:100px;height:4px;overflow:hidden;}
+        .progress-fill{background:linear-gradient(90deg,var(--text-secondary),var(--text-primary));width:0%;height:100%;transition:width 0.4s ease;}
+
+        .tasks-title{font-size:13px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;}
+        .add-btn{background:rgba(255,255,255,0.1);border:1px solid var(--border-light);color:var(--text-primary);padding:6px 14px;border-radius:40px;cursor:pointer;font-size:12px;transition:0.2s;}
+        .add-btn:hover{background:rgba(255,255,255,0.2);}
+
+        .task{background:var(--bg-task);backdrop-filter:blur(4px);border-radius:28px;padding:14px 16px 14px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;border:1px solid var(--border-task);transition:background 0.2s,border-color 0.2s;}
+        .task:hover{background:var(--bg-task-hover);border-color:var(--border-light);}
+        .sortable-drag{opacity:0.5;} .sortable-ghost{opacity:0.3;background:var(--bg-task-hover);}
+        .drag-handle{cursor:grab;padding:4px 6px;color:var(--text-muted);font-size:16px;line-height:1;opacity:0.45;transition:opacity 0.2s;touch-action:none;user-select:none;flex-shrink:0;}
+        .drag-handle:hover{opacity:1;} .drag-handle:active{cursor:grabbing;}
+        .task-info{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
+        .task-emoji{font-size:22px;pointer-events:none;flex-shrink:0;display:flex;align-items:center;justify-content:center;width:28px;height:28px;}
+        .task-emoji svg{width:20px;height:20px;flex-shrink:0;transition:color 0.3s,opacity 0.3s;}
+
+        /* Минималистичный стиль — SVG адаптируется под тему */
+        body:not(.light) .task-emoji.minimal svg{
+            color: rgba(180,190,220,0.75);
+        }
+        body.light .task-emoji.minimal svg{
+            color: rgba(40,50,80,0.65);
+        }
+        /* Задание выполнено — иконка тускнеет */
+        .completed-task .task-emoji.minimal svg{
+            opacity: 0.35;
+        }
+        body:not(.light) .task-emoji svg{stroke:rgba(220,228,248,0.75);}
+        body.light .task-emoji svg{stroke:rgba(30,35,50,0.7);}
+        .task-name{font-size:15px;color:var(--text-primary);white-space:normal;word-break:break-word;}
+        .task-badge{font-size:12px;flex-shrink:0;}
+        .task-xp{background:rgba(200,204,220,0.15);padding:4px 10px;border-radius:40px;font-size:11px;color:var(--text-secondary);white-space:nowrap;flex-shrink:0;}
+        .task-actions{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+
+        .ios-switch{position:relative;display:inline-block;width:51px;height:31px;}
+        .ios-switch input{opacity:0;width:0;height:0;}
+        .ios-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:#e5e5ea;transition:0.2s;border-radius:31px;}
+        .ios-slider:before{position:absolute;content:"";height:27px;width:27px;left:2px;bottom:2px;background-color:white;transition:0.2s;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
+        input:checked+.ios-slider{background-color:var(--ios-green);}
+        input:checked+.ios-slider:before{transform:translateX(20px);}
+        input:disabled+.ios-slider{opacity:0.6;cursor:not-allowed;}
+
+        .menu-dots{position:relative;display:inline-block;}
+        .dots-btn{background:transparent;border:none;cursor:pointer;font-size:18px;padding:6px 10px;border-radius:40px;opacity:0.6;transition:0.2s;color:var(--text-primary);}
+        .dots-btn:hover{opacity:1;background:rgba(255,255,255,0.1);}
+        .dots-menu{position:absolute;bottom:100%;right:0;background:var(--modal-bg);backdrop-filter:blur(12px);border-radius:20px;padding:6px 0;min-width:210px;opacity:0;visibility:hidden;transition:0.15s;z-index:10;border:1px solid var(--border-light);margin-bottom:8px;display:flex;flex-direction:column;}
+        .menu-dots.open .dots-menu{opacity:1;visibility:visible;}
+        .dots-menu button,.dots-menu .menu-item{background:none;border:none;width:100%;text-align:left;padding:8px 16px;color:var(--text-primary);font-size:13px;cursor:pointer;transition:0.1s;display:flex;align-items:center;gap:8px;}
+        .dots-menu button:hover,.dots-menu .menu-item:hover{background:rgba(255,255,255,0.1);}
+        .toggle-switch{display:flex;justify-content:space-between;align-items:center;width:100%;}
+        .toggle-track{width:36px;height:20px;background:#2a2e38;border-radius:20px;position:relative;transition:0.2s;cursor:pointer;flex-shrink:0;}
+        .toggle-track.active{background:var(--ios-green);}
+        .toggle-track::after{content:'';position:absolute;width:16px;height:16px;background:white;border-radius:50%;top:2px;left:2px;transition:0.2s;}
+        .toggle-track.active::after{left:18px;}
+
+        .weekday-popup{position:absolute;bottom:100%;right:0;background:var(--modal-bg);border-radius:20px;padding:12px;min-width:220px;z-index:20;border:1px solid var(--border-light);margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;}
+        .weekday-popup button{background:var(--input-bg);border:1px solid var(--border-light);color:var(--text-primary);padding:6px 12px;border-radius:30px;cursor:pointer;font-size:12px;}
+
+        .theme-toggle{position:fixed;bottom:max(28px,env(safe-area-inset-bottom,28px));right:28px;width:52px;height:52px;background:var(--bg-card);backdrop-filter:blur(12px);border:1px solid var(--border-light);border-radius:50%;cursor:pointer;z-index:100;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);color:var(--text-primary);transition:0.2s;}
+        .theme-toggle:hover{transform:scale(1.08);}
+        .theme-toggle .sun-icon::before{content:"☼";font-size:24px;}
+        .theme-toggle .moon-icon::before{content:"☽";font-size:24px;}
+        .menu-btn{position:fixed;top:max(28px,env(safe-area-inset-top,28px));right:28px;background:var(--bg-card);backdrop-filter:blur(12px);border:1px solid var(--border-light);border-radius:60px;padding:10px 18px;cursor:pointer;z-index:100;color:var(--text-primary);font-size:20px;transition:0.2s;}
+        .menu-btn:hover{background:var(--bg-card-hover);}
+
+        .sidebar{position:fixed;top:0;right:-420px;width:400px;max-width:90vw;height:100vh;background:var(--modal-bg);backdrop-filter:blur(24px);z-index:200;transition:right 0.3s;padding:max(80px,calc(env(safe-area-inset-top) + 60px)) 28px max(32px,env(safe-area-inset-bottom)) 28px;overflow-y:auto;border-left:1px solid var(--border-light);display:flex;flex-direction:column;}
+        .sidebar.open{right:0;}
+        .sidebar-content{flex:1;}
+        .overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:150;display:none;}
+        .overlay.open{display:block;}
+        .close-sidebar{position:absolute;top:max(24px,env(safe-area-inset-top,24px));right:28px;background:none;border:none;color:var(--text-secondary);font-size:24px;cursor:pointer;}
+        .sidebar h3{color:var(--text-primary);margin-bottom:20px;border-bottom:1px solid var(--border-light);padding-bottom:12px;}
+
+        .settings-btn{display:flex;justify-content:space-between;align-items:center;background:var(--bg-task);border:1px solid var(--border-light);color:var(--text-primary);padding:10px 16px;border-radius:40px;cursor:pointer;width:100%;text-align:left;font-size:13px;transition:0.2s;margin-bottom:8px;}
+        .settings-btn:hover{background:var(--bg-task-hover);transform:translateX(4px);}
+        .settings-btn .arrow{color:var(--text-muted);font-size:12px;}
+
+        /* Кнопка сброса — в самом низу сайдбара */
+        .reset-sidebar-btn{width:100%;padding:12px;font-size:13px;border:1px solid var(--danger);border-radius:60px;color:var(--danger);background:var(--danger-light);cursor:pointer;transition:0.2s;margin-top:auto;padding-top:16px;}
+        .reset-sidebar-btn:hover{background:rgba(204,68,68,0.3);}
+
+        /* Экспорт / Импорт */
+        .backup-row{display:flex;gap:8px;margin-bottom:8px;}
+        .backup-btn{flex:1;padding:10px 8px;font-size:12px;border-radius:40px;cursor:pointer;transition:0.2s;border:1px solid var(--border-light);background:var(--bg-task);color:var(--text-primary);text-align:center;}
+        .backup-btn:hover{background:var(--bg-task-hover);}
+        .backup-btn.import{border-color:rgba(52,199,89,0.4);color:var(--ios-green);}
+        .backup-btn.export{border-color:rgba(200,210,240,0.3);}
+
+        .dropdown-menu{position:relative;width:100%;margin-bottom:8px;}
+        .dropdown-content{position:absolute;top:100%;left:0;right:0;background:var(--modal-bg);backdrop-filter:blur(12px);border-radius:20px;padding:8px 0;margin-top:4px;opacity:0;visibility:hidden;transition:0.15s;z-index:20;border:1px solid var(--border-light);}
+        .dropdown-menu.open .dropdown-content{opacity:1;visibility:visible;}
+        .dropdown-option{padding:8px 16px;cursor:pointer;transition:0.1s;display:flex;justify-content:space-between;align-items:center;color:var(--text-primary);font-size:13px;}
+        .dropdown-option:hover{background:rgba(255,255,255,0.1);}
+        .dropdown-option.active{background:rgba(255,255,255,0.08);}
+        .dropdown-option .check{color:var(--text-secondary);font-size:14px;}
+
+        .calendar{background:var(--bg-calendar);border-radius:28px;padding:18px;margin-bottom:24px;}
+        .calendar-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+        .cal-nav{background:none;border:1px solid var(--border-light);color:var(--text-secondary);padding:6px 12px;border-radius:40px;cursor:pointer;}
+        #monthYear{color:var(--text-primary);}
+        .calendar-weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:14px;}
+        .calendar-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+        .calendar-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:var(--bg-task);border-radius:16px;font-size:14px;cursor:pointer;color:var(--text-primary);border:1px solid var(--border-task);position:relative;}
+        .calendar-day.has-tasks{background:var(--bg-task-hover);}
+        .calendar-day.today{border:2px solid var(--text-secondary);}
+        .calendar-day.has-penalty{background:var(--danger-light);border-color:var(--danger);}
+        .calendar-day.selected-day{outline:2px solid var(--text-primary);outline-offset:1px;}
+
+        .day-details{margin-top:18px;background:var(--bg-task);border-radius:20px;padding:14px;max-height:280px;overflow-y:auto;}
+        .day-detail-item{font-size:12px;padding:10px 8px;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center;gap:8px;}
+        .day-detail-item:last-child{border-bottom:none;}
+        .day-detail-name{flex:1;color:var(--text-secondary);}
+        .day-detail-done{color:var(--ios-green);font-size:13px;font-weight:500;white-space:nowrap;}
+        .day-detail-miss{color:var(--danger);font-size:13px;white-space:nowrap;}
+        .complete-past-btn{background:rgba(52,199,89,0.15);border:1px solid rgba(52,199,89,0.4);color:#34c759;padding:4px 10px;border-radius:20px;cursor:pointer;font-size:11px;transition:0.2s;white-space:nowrap;}
+        .complete-past-btn:hover{background:rgba(52,199,89,0.3);}
+        .day-add-btn{background:var(--danger-light);border:1px solid var(--danger);color:var(--danger);padding:6px 12px;border-radius:30px;cursor:pointer;font-size:11px;margin-top:10px;text-align:center;display:block;width:100%;}
+
+        /* Счётчик повторений (multiplier task) */
+        .counter-row{display:flex;align-items:center;gap:10px;background:var(--bg-task);border:1px solid var(--border-light);border-radius:28px;padding:10px 14px;margin-bottom:10px;}
+        .counter-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border-light);background:rgba(255,255,255,0.08);color:var(--text-primary);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:0.15s;line-height:1;}
+        .counter-btn:hover{background:rgba(255,255,255,0.18);}
+        .counter-btn:active{transform:scale(0.9);}
+        .counter-display{flex:1;text-align:center;}
+        .counter-number{font-size:28px;font-weight:600;color:var(--text-primary);line-height:1;}
+        .counter-xp-hint{font-size:11px;color:var(--ios-green);margin-top:2px;}
+        .counter-label{font-size:11px;color:var(--text-muted);margin-top:1px;}
+        .task-counter-badge{background:rgba(52,199,89,0.15);border:1px solid rgba(52,199,89,0.35);color:var(--ios-green);padding:3px 9px;border-radius:30px;font-size:11px;white-space:nowrap;flex-shrink:0;}
+
+        /* Шапка деталей дня */
+        .day-summary{display:flex;justify-content:space-between;align-items:center;padding:0 2px 12px;margin-bottom:4px;border-bottom:1px solid var(--border-light);}
+        .day-summary-date{font-size:12px;font-weight:500;color:var(--text-primary);}
+        .day-summary-xp{font-size:13px;font-weight:600;color:var(--ios-green);}
+        .day-summary-xp.zero{color:var(--text-muted);}
+        .day-summary-stats{font-size:10px;color:var(--text-muted);margin-top:2px;}
+        .day-section-label{font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-muted);padding:8px 8px 4px;opacity:0.7;}
+        .day-detail-item.done-item .day-detail-name{color:var(--text-primary);}
+        .day-detail-item.missed-item{opacity:0.65;}
+
+        .date-picker-calendar{background:var(--bg-calendar);border-radius:20px;padding:12px;margin-top:8px;margin-bottom:12px;}
+        .date-picker-calendar .calendar-days{gap:4px;}
+        .date-picker-calendar .calendar-day{font-size:12px;border-radius:12px;background:var(--input-bg);}
+        .date-picker-calendar .calendar-day.selected{background:var(--danger);color:white;border-color:var(--danger);}
+
+        /* МОДАЛЬНОЕ ОКНО — пошаговое добавление */
+        .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:250;display:flex;align-items:flex-end;justify-content:center;}
+        .modal-overlay.center-modal{align-items:center;}
+        .modal{background:var(--modal-bg);border-radius:40px 40px 0 0;padding:28px 24px 40px;z-index:300;width:100%;max-width:520px;border:1px solid var(--border-light);max-height:90vh;overflow-y:auto;}
+        .modal-overlay.center-modal .modal{border-radius:40px;max-width:420px;width:90%;}
+        .modal h3{color:var(--text-primary);margin-bottom:8px;font-size:20px;}
+        .modal-subtitle{color:var(--text-muted);font-size:13px;margin-bottom:24px;}
+        .modal input,.modal select{width:100%;padding:14px 16px;margin-bottom:12px;border-radius:60px;border:1px solid var(--border-light);background:var(--input-bg);color:var(--text-primary);font-size:16px;}
+        .modal input:focus,.modal select:focus{outline:none;border-color:var(--text-secondary);}
+        .modal-buttons{display:flex;gap:12px;margin-top:20px;}
+        .modal-buttons button{flex:1;padding:14px;border-radius:60px;background:transparent;border:1px solid var(--border-light);color:var(--text-primary);cursor:pointer;font-size:15px;transition:0.2s;}
+        .modal-buttons .btn-primary{background:rgba(255,255,255,0.12);border-color:var(--text-secondary);}
+        .modal-buttons .btn-primary:hover{background:rgba(255,255,255,0.2);}
+        .modal-buttons .btn-danger{border-color:var(--danger);color:var(--danger);}
+
+        /* Пошаговый прогресс */
+        .wizard-steps{display:flex;gap:6px;margin-bottom:24px;}
+        .wizard-step{height:3px;border-radius:3px;flex:1;background:var(--border-light);transition:background 0.3s;}
+        .wizard-step.active{background:var(--text-secondary);}
+        .wizard-step.done{background:var(--ios-green);}
+
+        /* Превью задания */
+        .task-preview{background:var(--bg-task);border-radius:24px;padding:20px;border:1px solid var(--border-light);margin-bottom:8px;}
+        .task-preview-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border-light);font-size:13px;color:var(--text-secondary);}
+        .task-preview-row:last-child{border-bottom:none;}
+        .task-preview-row span:last-child{color:var(--text-primary);}
+        .task-preview-title{font-size:18px;color:var(--text-primary);font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+
+        /* XP пресеты */
+        .xp-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+        .xp-preset{background:var(--bg-task);border:1px solid var(--border-light);color:var(--text-secondary);padding:6px 14px;border-radius:30px;cursor:pointer;font-size:13px;transition:0.2s;}
+        .xp-preset:hover{background:var(--bg-task-hover);color:var(--text-primary);}
+        .xp-preset.selected{background:rgba(200,210,240,0.15);border-color:var(--text-secondary);color:var(--text-primary);}
+
+        /* Переключатели важность/перенос */
+        .wizard-toggle-row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--bg-task);border-radius:20px;margin-bottom:10px;border:1px solid var(--border-light);}
+        .wizard-toggle-info{flex:1;}
+        .wizard-toggle-label{font-size:14px;color:var(--text-primary);}
+        .wizard-toggle-desc{font-size:11px;color:var(--text-muted);margin-top:2px;}
+
+        .weekday-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+        .weekday-option{background:var(--input-bg);border:1px solid var(--border-light);color:var(--text-secondary);padding:8px 12px;border-radius:30px;cursor:pointer;font-size:13px;transition:0.2s;}
+        .weekday-option.active{background:var(--danger);border-color:var(--danger);color:white;}
+
+        /* ИСТОРИЯ */
+        .history-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+        .history-tab{padding:6px 13px;background:transparent;border:1px solid var(--border-light);color:var(--text-secondary);cursor:pointer;font-size:12px;border-radius:30px;transition:0.2s;}
+        .history-tab.active{background:var(--bg-task-hover);color:var(--text-primary);}
+        .history-list{max-height:420px;overflow-y:auto;}
+        .history-section-title{font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-muted);padding:12px 0 6px;}
+        .history-date-entry{padding:8px 10px;border-radius:14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px;}
+        .history-date-entry.done{background:rgba(52,199,89,0.08);}
+        .history-date-entry.missed{background:rgba(204,68,68,0.07);}
+        .history-entry-left{display:flex;align-items:center;gap:8px;flex:1;min-width:0;}
+        .history-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+        .history-status-dot.done{background:var(--ios-green);}
+        .history-status-dot.missed{background:var(--danger);}
+        .history-entry-name{font-size:13px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .history-entry-right{font-size:12px;white-space:nowrap;flex-shrink:0;}
+        .history-entry-right.done{color:var(--ios-green);}
+        .history-entry-right.missed{color:var(--danger);opacity:0.7;}
+        .history-stat-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border-light);color:var(--text-primary);}
+        .history-count{color:var(--text-secondary);font-size:13px;}
+
+        .manage-task-item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid var(--border-light);}
+        .manage-task-info{flex:1;}
+        .manage-task-name{color:var(--text-primary);font-weight:500;}
+        .manage-task-meta{font-size:11px;color:var(--text-muted);}
+        .manage-task-buttons{display:flex;gap:8px;}
+        .edit-task-manage,.delete-task-manage{background:transparent;border:1px solid var(--border-light);color:var(--text-primary);padding:4px 12px;border-radius:30px;cursor:pointer;font-size:14px;transition:0.2s;}
+        .delete-task-manage{border-color:var(--danger);color:var(--danger);}
+
+        /* ── Категории (аккордеон) ── */
+        .category-block{margin-bottom:10px;border-radius:24px;overflow:hidden;border:1px solid var(--border-light);transition:border-color 0.2s;}
+        .category-header{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;user-select:none;background:var(--bg-task);transition:background 0.2s;}
+        .category-header:hover{background:var(--bg-task-hover);}
+        .category-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+        .category-emoji{font-size:18px;flex-shrink:0;line-height:1;}
+        .category-title{font-size:13px;font-weight:500;color:var(--text-primary);flex:1;}
+        .category-progress{font-size:11px;color:var(--text-muted);white-space:nowrap;margin-right:4px;}
+        .category-progress .done-count{color:var(--ios-green);font-weight:600;}
+        .category-arrow{font-size:11px;color:var(--text-muted);transition:transform 0.25s;flex-shrink:0;}
+        .category-block.open .category-arrow{transform:rotate(180deg);}
+        .category-mini-bar{height:2px;background:var(--border-task);position:relative;margin:0 16px;}
+        .category-mini-bar-fill{height:100%;background:var(--ios-green);border-radius:2px;transition:width 0.4s;}
+        .category-body{display:none;padding:6px 8px 8px;}
+        .category-block.open .category-body{display:block;}
+        .category-block.open{border-color:rgba(255,255,255,0.12);}
+
+        /* Кнопка управления категориями */
+        .cat-manage-btn{display:flex;align-items:center;gap:8px;background:none;border:1px dashed var(--border-light);color:var(--text-muted);padding:10px 16px;border-radius:20px;cursor:pointer;font-size:12px;width:100%;margin-top:8px;transition:0.2s;}
+        .cat-manage-btn:hover{border-color:var(--text-secondary);color:var(--text-secondary);}
+
+        /* Выбор категории в визарде и модале */
+        .cat-pick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+        .cat-pick-btn{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:16px;border:1.5px solid var(--border-light);background:none;color:var(--text-primary);cursor:pointer;font-size:13px;transition:0.15s;text-align:left;}
+        .cat-pick-btn:hover{background:rgba(255,255,255,0.07);}
+        .cat-pick-btn.selected{border-width:2px;}
+
+        /* Выбор цвета категории */
+        .color-swatches{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+        .color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:0.15s;flex-shrink:0;}
+        .color-swatch.selected{border-color:white;transform:scale(1.15);}
+
+        @media(max-width:560px){
+            .card{padding:24px 16px;border-radius:40px;}
+            .level-box{width:95%;padding:20px;}
+            .task{padding:12px 12px 12px 8px;}
+            .sidebar{width:100%;max-width:100%;}
+            .ring-tl,.ring-tr,.ring-bl,.ring-br{width:60px;height:60px;}
+            .theme-toggle{bottom:max(16px,env(safe-area-inset-bottom,16px));right:16px;width:44px;height:44px;}
+            .menu-btn{top:max(16px,env(safe-area-inset-top,16px));right:16px;padding:8px 14px;}
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+</head>
+<body>
+<div class="deep-bg"><div class="camera-zoom">
+    <div class="ring ring-c ring-c1"></div><div class="ring ring-c ring-c2"></div><div class="ring ring-c ring-c3"></div><div class="ring ring-c ring-c4"></div>
+    <div class="ring ring-tl"></div><div class="ring ring-tr"></div><div class="ring ring-bl"></div><div class="ring ring-br"></div>
+    <div class="bar b1"></div><div class="bar b2"></div><div class="bar b3"></div><div class="bar b4"></div><div class="bar b5"></div><div class="bar b6"></div>
+    <div class="sphere s1"></div><div class="sphere s2"></div><div class="sphere s3"></div><div class="sphere s4"></div><div class="sphere s5"></div>
+    <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div><div class="dot d5"></div><div class="dot d6"></div><div class="dot d7"></div><div class="dot d8"></div>
+</div></div>
+<div class="vignette"></div><div class="overlay-dark"></div>
+
+<div class="card">
+    <h1>Моя прогрессия</h1>
+    <div class="level-box" id="levelBox">
+        <div class="level-label">УРОВЕНЬ</div>
+        <div class="level-badge" id="levelDisplay">1</div>
+        <div class="xp-text" id="xpValue">0 / 1000 опыта</div>
+        <div class="progress-container"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <div class="tasks-title">
+        <span>СЕГОДНЯ</span>
+        <button class="add-btn" id="openAddTaskModal">+ Добавить</button>
+    </div>
+    <div id="categoriesContainer"></div>
+    <div id="tasksContainerImportant" style="display:none"></div>
+    <div id="tasksContainerNormal" style="display:none"></div>
+</div>
+
+<button class="menu-btn" id="menuBtn">☰</button>
+<button class="theme-toggle" id="themeToggle"><span class="sun-icon"></span></button>
+<div class="overlay" id="overlay"></div>
+<div class="sidebar" id="sidebar">
+    <button class="close-sidebar" id="closeSidebar">✕</button>
+    <div class="sidebar-content">
+        <div class="calendar">
+            <div class="calendar-header">
+                <button class="cal-nav" id="prevMonth">◀</button>
+                <span id="monthYear"></span>
+                <button class="cal-nav" id="nextMonth">▶</button>
+            </div>
+            <div class="calendar-weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+            <div class="calendar-days" id="calendarDays"></div>
+            <div class="day-details" id="dayDetails"><div style="text-align:center;color:var(--text-muted);">Нажмите на день</div></div>
+        </div>
+
+        <h3>Настройки</h3>
+        <button id="manageTasksBtn" class="settings-btn">📋 Управление заданиями</button>
+        <button id="manageCatsBtn" class="settings-btn">🗂 Категории</button>
+
+        <div class="dropdown-menu" id="sortMenu">
+            <button class="settings-btn" id="sortTrigger">📊 Сортировка заданий <span class="arrow">▼</span></button>
+            <div class="dropdown-content" id="sortDropdown">
+                <div class="dropdown-option" data-sort="manual"><span>⠿ Вручную (перетаскивание)</span><span class="check"></span></div>
+                <div class="dropdown-option" data-sort="xp-desc"><span>◆ По опыту (сначала большие)</span><span class="check"></span></div>
+                <div class="dropdown-option" data-sort="xp-asc"><span>◇ По опыту (сначала малые)</span><span class="check"></span></div>
+                <div class="dropdown-option" data-sort="created-desc"><span>⏱ По созданию (новые сверху)</span><span class="check"></span></div>
+                <div class="dropdown-option" data-sort="created-asc"><span>⏰ По созданию (старые сверху)</span><span class="check"></span></div>
+                <div class="dropdown-option" data-sort="name-asc"><span>🔤 По имени (А-Я)</span><span class="check"></span></div>
+                <div class="dropdown-option" data-sort="name-desc"><span>🔠 По имени (Я-А)</span><span class="check"></span></div>
+            </div>
+        </div>
+
+        <div class="dropdown-menu" id="emojiStyleMenu">
+            <button class="settings-btn" id="emojiStyleTrigger">🎨 Стиль эмодзи <span class="arrow">▼</span></button>
+            <div class="dropdown-content" id="emojiStyleDropdown">
+                <div class="dropdown-option" data-style="colorful"><span>🎨 Обычные (цветные)</span><span class="check"></span></div>
+                <div class="dropdown-option" data-style="bw-normal"><span>⚫ Чёрно-белые</span><span class="check"></span></div>
+                <div class="dropdown-option" data-style="minimal"><span>◉ Минималистичные</span><span class="check"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Экспорт / Импорт / Сброс -->
+    <div style="padding-top:24px;border-top:1px solid var(--border-light);margin-top:24px;">
+        <div class="backup-row">
+            <button id="exportBtn" class="backup-btn export">⬇ Экспорт</button>
+            <label class="backup-btn import" style="cursor:pointer;">⬆ Импорт<input type="file" id="importFile" accept=".json" style="display:none;"></label>
+        </div>
+        <button class="reset-sidebar-btn" id="resetBtn">⚠️ Сбросить весь прогресс</button>
+    </div>
+</div>
+
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/My-progress/sw.js').catch(() => {}));
+}
+
+// Авто-сброс масштаба после ввода на iOS
+document.addEventListener('focusout', () => {
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        setTimeout(() => { window.scrollTo(0, 0); }, 100);
+    }
+});
+
+let currentXP=0, currentLevel=1, levelStartXP=0, levelStartDate=new Date().toISOString().split('T')[0];
+let customTasks=[], nextTaskId=1, currentEmojiStyle='colorful', penaltyProcessedDates={};
+let currentSort='manual', importantSortable=null, normalSortable=null;
+let importantOrder=[], normalOrder=[], selectedCalDate=null;
+
+// ── Категории ──
+const CAT_COLORS = ['#6c8ebf','#82b366','#d6a343','#c45e5e','#8a6bbf','#4eaaa0','#c47ec4','#6b8c6b'];
+const DEFAULT_CATEGORIES = [
+    {id:'cat_daily',  emoji:'🔁', name:'Ежедневные',    color:'#6c8ebf', locked:true},
+    {id:'cat_fitness',emoji:'💪', name:'Физическое',    color:'#c45e5e', locked:false},
+    {id:'cat_work',   emoji:'💼', name:'Работа и доход',color:'#d6a343', locked:false},
+    {id:'cat_learn',  emoji:'🧠', name:'Обучение',      color:'#8a6bbf', locked:false},
+    {id:'cat_self',   emoji:'🧘', name:'Личное',        color:'#4eaaa0', locked:false},
+    {id:'cat_other',  emoji:'📦', name:'Разное',        color:'#6b8c6b', locked:true},
+];
+let categories = [];          // загружается из localStorage
+let catOpenState = {};         // {cat_id: true/false}
+
+const emojiMap = {
+    colorful:{
+        'Утренняя зарядка':'🏃','Читать час':'📖','Завтрак дома':'🍳','Обед дома':'🍜',
+        'Медитация 25 мин':'🧘','День без Инстаграма':'📵','Дыхательная практика':'🌬️'
+    }
+};
+
+// SVG-иконки для минималистичного стиля
+// stroke="currentColor" — цвет подхватывается из CSS
+const SVG = (path, vb='0 0 24 24') =>
+    `<svg viewBox="${vb}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+
+const minimalIconMap = {
+    // Движение / спорт
+    'зарядка':   SVG('<path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="M7 17l2-4 2 2 2-4 3 4"/><path d="M5 20h14"/>'),
+    'бег':       SVG('<circle cx="12" cy="4" r="1.5"/><path d="m9 20 1.5-5L9 12l3-3 2 2 2-1"/><path d="m15 20-1-4"/>'),
+    'спорт':     SVG('<path d="M6 4v6a6 6 0 0 0 12 0V4"/><path d="M4 4h16"/>'),
+    'тренировка':SVG('<path d="M6 4v6a6 6 0 0 0 12 0V4"/><path d="M4 4h16"/>'),
+    'йога':      SVG('<circle cx="12" cy="4" r="1.5"/><path d="M12 6v5l-4 3m4-3 4 3"/><path d="M8 19h8"/>'),
+    'прогулка':  SVG('<circle cx="12" cy="4" r="1.5"/><path d="M9 8h6l-1 5-2 7m0-7 2 2"/>'),
+    'плавание':  SVG('<path d="M2 12c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"/><path d="M2 17c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0"/>'),
+    'велосипед': SVG('<circle cx="6" cy="15" r="4"/><circle cx="18" cy="15" r="4"/><path d="M6 15 10 6h4l2 4"/><path d="m14 10 4 5"/>'),
+
+    // Еда
+    'завтрак':   SVG('<path d="M4 10h16"/><path d="M8 10V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v5"/><rect x="3" y="10" width="18" height="10" rx="2"/>'),
+    'обед':      SVG('<path d="M3 11l1-7h16l1 7"/><path d="M3 11h18v2a6 6 0 0 1-6 6H9a6 6 0 0 1-6-6v-2z"/>'),
+    'ужин':      SVG('<path d="M3 11l1-7h16l1 7"/><path d="M3 11h18v2a6 6 0 0 1-6 6H9a6 6 0 0 1-6-6v-2z"/>'),
+    'еда':       SVG('<path d="M3 11l1-7h16l1 7"/><path d="M3 11h18v2a6 6 0 0 1-6 6H9a6 6 0 0 1-6-6v-2z"/>'),
+    'готовить':  SVG('<path d="M4 10h16"/><path d="M8 10V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v5"/><rect x="3" y="10" width="18" height="10" rx="2"/>'),
+    'вода':      SVG('<path d="M12 2C6 8 4 12 4 15a8 8 0 0 0 16 0c0-3-2-7-8-13z"/>'),
+    'кофе':      SVG('<path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><path d="M6 2v2m4-2v2m4-2v2"/>'),
+
+    // Ум / учёба
+    'читать':    SVG('<path d="M2 6s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1V6z"/><path d="M12 6s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1V6z"/>'),
+    'книга':     SVG('<path d="M2 6s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1V6z"/><path d="M12 6s1.5-2 5-2 5 2 5 2v14s-1.5-1-5-1-5 1-5 1V6z"/>'),
+    'курс':      SVG('<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/>'),
+    'учёба':     SVG('<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8m-4-4v4"/>'),
+    'урок':      SVG('<path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>'),
+    'английски': SVG('<path d="M4 7h16M4 12h10M4 17h7"/>'),
+    'язык':      SVG('<path d="M4 7h16M4 12h10M4 17h7"/>'),
+    'писать':    SVG('<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>'),
+    'заметки':   SVG('<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>'),
+    'дневник':   SVG('<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>'),
+    'программ':  SVG('<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>'),
+    'код':       SVG('<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>'),
+
+    // Здоровье
+    'медитация': SVG('<circle cx="12" cy="4" r="1.5"/><path d="M6 10c0 0 1-2 6-2s6 2 6 2"/><path d="M6 10l-1 6h14l-1-6"/><path d="M9 22l3-6 3 6"/>'),
+    'дыхание':   SVG('<path d="M12 22V12m0 0c-3 0-7-1-7-5 0-3 3-5 7-5s7 2 7 5c0 4-4 5-7 5z"/>'),
+    'сон':       SVG('<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>'),
+    'витамин':   SVG('<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"/><path d="M8.5 8.5 16 16"/>'),
+    'таблетк':   SVG('<path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7z"/><path d="M8.5 8.5 16 16"/>'),
+    'здоровь':   SVG('<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>'),
+    'пробежк':   SVG('<circle cx="12" cy="4" r="1.5"/><path d="m9 20 1.5-5L9 12l3-3 2 2 2-1"/><path d="m15 20-1-4"/>'),
+
+    // Работа / продуктивность
+    'работа':    SVG('<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>'),
+    'задач':     SVG('<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>'),
+    'отклик':    SVG('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'),
+    'планир':    SVG('<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>'),
+    'фриланс':   SVG('<path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M12 12h.01"/>'),
+    'проект':    SVG('<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>'),
+    'встреч':    SVG('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+
+    // Деньги
+    'деньги':    SVG('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'),
+    'доход':     SVG('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'),
+    'бюджет':    SVG('<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'),
+    'сберег':    SVG('<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 11.5 5c-.63 0-1.23.1-1.8.28"/><path d="M4 4v7c0 5.523 8 10 8 10s2.24-1.165 4.33-3"/>'),
+
+    // Личное
+    'инстаграм': SVG('<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/>'),
+    'телефон':   SVG('<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/>'),
+    'соцсет':    SVG('<rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/>'),
+    'музык':     SVG('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>'),
+    'уборк':     SVG('<path d="m14 12-8.5 8.5a2.12 2.12 0 0 1-3-3L11 9"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/>'),
+    'дом':       SVG('<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'),
+    'покупк':    SVG('<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>'),
+    'приготов':  SVG('<path d="M4 10h16"/><path d="M8 10V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v5"/><rect x="3" y="10" width="18" height="10" rx="2"/>'),
+    'растяжк':   SVG('<circle cx="12" cy="4" r="1.5"/><path d="M6 10c0 0 1-2 6-2s6 2 6 2"/><path d="M6 10l-1 6h14l-1-6"/><path d="M9 22l3-6 3 6"/>'),
+};
+
+// Дефолтная SVG-иконка (⬡ шестиугольник — нейтральный минималистичный символ)
+const SVG_DEFAULT = SVG('<polygon points="12 2 22 7 22 17 12 22 2 17 2 7"/>');
+
+// Подбор SVG-иконки по названию задания (ищет совпадение ключевых слов)
+const getMinimalSvg = (name) => {
+    let lower = name.toLowerCase();
+    for(let [key, svg] of Object.entries(minimalIconMap)){
+        if(lower.includes(key)) return svg;
+    }
+    return SVG_DEFAULT;
+};
+
+const getEmoji = (task, isBase) => {
+    if(currentEmojiStyle === 'minimal'){
+        // Для minimal всегда используем SVG по имени задания
+        return getMinimalSvg(task.name);
+    }
+    if(!isBase && task.emoji) return task.emoji;
+    if(currentEmojiStyle === 'bw-normal') return emojiMap.colorful[task.name] || '✨';
+    return emojiMap.colorful[task.name] || '✨';
+};
+
+let baseTasks = [
+    {id:"base_0",name:"Утренняя зарядка",xpReward:150,repeatType:"daily",autoRollover:false,isImportant:false,completedDates:[],createdAt:Date.now()-1000000},
+    {id:"base_1",name:"Читать час",xpReward:200,repeatType:"daily",autoRollover:false,isImportant:false,completedDates:[],createdAt:Date.now()-900000},
+    {id:"base_2",name:"Завтрак дома",xpReward:100,repeatType:"daily",autoRollover:false,isImportant:false,completedDates:[],createdAt:Date.now()-800000},
+    {id:"base_3",name:"Обед дома",xpReward:100,repeatType:"daily",autoRollover:false,isImportant:false,completedDates:[],createdAt:Date.now()-700000},
+    {id:"base_4",name:"Медитация 25 мин",xpReward:100,repeatType:"daily",autoRollover:false,isImportant:false,completedDates:[],createdAt:Date.now()-600000},
+    {id:"base_5",name:"День без Инстаграма",xpReward:300,repeatType:"daily",autoRollover:false,isImportant:false,completedDates:[],createdAt:Date.now()-500000},
+    {id:"base_6",name:"Дыхательная практика",xpReward:150,repeatType:"daily",autoRollover:false,isImportant:false,completedDates:[],createdAt:Date.now()-400000}
+];
+
+const getToday = () => new Date().toISOString().split('T')[0];
+const expNeed = l => 1000+(l-1)*500;
+const recalcLevel = xp => { let l=1,r=xp; while(r>=expNeed(l)){r-=expNeed(l);l++;} return {level:l,remaining:r}; };
+const getPrevDay = d => { let dt=new Date(d); dt.setDate(dt.getDate()-1); return dt.toISOString().split('T')[0]; };
+const formatDate = d => { let [y,m,day]=d.split('-'); return `${day}.${m}.${y}`; };
+const autoEmoji = name => { const map={'зарядка':'🏃','спорт':'💪','бег':'🏃','йога':'🧘','читать':'📖','книга':'📚','урок':'🎓','завтрак':'🍳','обед':'🍜','ужин':'🍽️','готовить':'🍳','приготов':'🍳','медитация':'🧘','дыхание':'🌬️','растяжка':'🧘','инстаграм':'📵','соцсети':'📱','телефон':'📱','работа':'💼','фриланс':'💻','проект':'📂','встреча':'👥','прогулка':'🚶','велосипед':'🚴','плавание':'🏊','пробежка':'🏃','тренировка':'💪','вода':'💧','кофе':'☕','сон':'😴','витамин':'💊','таблетки':'💊','здоровье':'❤️','деньги':'💰','доход':'💰','бюджет':'💰','покупки':'🛒','уборка':'🧹','дом':'🏠','музыка':'🎵','дневник':'📓','заметки':'📝','язык':'🗣️','английский':'🗣️','программ':'💻','код':'💻','курс':'🎓','планир':'📅','задача':'✅','отклик':'💬'}; for(let[k,v] of Object.entries(map)) if(name.toLowerCase().includes(k)) return v; return '✨'; };
+const monthNames = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+
+const updateLevelAndXP = () => {
+    let {level,remaining}=recalcLevel(currentXP);
+    if(level!==currentLevel){currentLevel=level;levelStartXP=currentXP-remaining;levelStartDate=getToday();}
+    currentLevel=level;
+    document.getElementById("levelDisplay").innerText=currentLevel;
+    document.getElementById("xpValue").innerHTML=`${remaining} / ${expNeed(currentLevel)} опыта`;
+    document.getElementById("progressFill").style.width=Math.min(100,(remaining/expNeed(currentLevel))*100)+"%";
+};
+
+const isTaskActiveOnDate = (task,date) => {
+    if(task.repeatType==='daily') return true;
+    if(task.repeatType==='weekly'){let wi=new Date(date).getDay();wi=wi===0?6:wi-1;return task.weekdays?.includes(wi)||false;}
+    return task.repeatType==='once'&&task.targetDate===date;
+};
+const isTaskVisible = (task,date) => !task.completedDates?.includes(date) && isTaskActiveOnDate(task,date);
+const getAllTasksForDate = date => [...baseTasks,...customTasks].filter(t=>!t.hidden&&isTaskActiveOnDate(t,date));
+const getTasksForDate = date => [...baseTasks,...customTasks].filter(t=>!t.hidden&&isTaskVisible(t,date));
+
+// ===================== СНАПШОТЫ ДНЕЙ =====================
+// Сохраняем состояние дня независимо от состава baseTasks.
+// Ключ: snapshot_YYYY-MM-DD → [{name, emoji, xpReward, done}]
+const saveSnapshot = (date) => {
+    let tasks = getAllTasksForDate(date);
+    let snap = tasks.map(t => ({
+        name: t.name,
+        emoji: t.emoji || emojiMap.colorful[t.name] || '✨',
+        xpReward: t.xpReward,
+        done: !!(t.completedDates && t.completedDates.includes(date))
+    }));
+    localStorage.setItem(`snapshot_${date}`, JSON.stringify(snap));
+};
+
+const getSnapshot = (date) => {
+    let raw = localStorage.getItem(`snapshot_${date}`);
+    return raw ? JSON.parse(raw) : null;
+};
+
+// Миграция: при первом запуске строим снапшоты из completedDates
+const migrateSnapshots = () => {
+    if(localStorage.getItem('snapshots_migrated')) return;
+    let allTasks = [...baseTasks, ...customTasks];
+    let datesToMigrate = new Set();
+    for(let t of allTasks){
+        for(let d of (t.completedDates||[])) datesToMigrate.add(d);
+    }
+    for(let date of datesToMigrate){
+        if(!getSnapshot(date)) saveSnapshot(date);
+    }
+    localStorage.setItem('snapshots_migrated','1');
+};
+
+const completeTask = (taskId,date,xp) => {
+    let task=[...baseTasks,...customTasks].find(t=>t.id.toString()===taskId);
+    if(!task||task.completedDates?.includes(date)) return false;
+    if(!task.completedDates) task.completedDates=[];
+    task.completedDates.push(date);
+    currentXP+=xp;
+    updateLevelAndXP(); saveAllData();
+    saveSnapshot(date); // сохраняем снапшот после выполнения
+    renderTodayTasks(); renderCalendar();
+    return true;
+};
+
+const updateTaskField = (taskId,field,value) => {
+    let task=[...baseTasks,...customTasks].find(t=>t.id.toString()===taskId);
+    if(task){task[field]=value;saveAllData();renderTodayTasks();renderCalendar();}
+};
+
+const applyPenalties = () => {
+    const today=getToday(); let changed=false;
+    for(let task of[...baseTasks,...customTasks]){
+        if(!task.isImportant||task.autoRollover) continue;
+        if(!isTaskActiveOnDate(task,today)||task.completedDates?.includes(today)) continue;
+        let key=`${today}_${task.id}`;
+        if(penaltyProcessedDates[key]) continue;
+        currentXP-=task.xpReward; penaltyProcessedDates[key]=true; changed=true;
+    }
+    if(changed){updateLevelAndXP();saveAllData();renderTodayTasks();renderCalendar();}
+};
+
+const rolloverTasks = () => {
+    const today=getToday(); let changed=false;
+    for(let task of[...baseTasks,...customTasks]){
+        if(!task.autoRollover) continue;
+        let yesterday=new Date(); yesterday.setDate(yesterday.getDate()-1);
+        let yStr=yesterday.toISOString().split('T')[0];
+        if(!isTaskActiveOnDate(task,yStr)||task.completedDates?.includes(yStr)) continue;
+        if(task.repeatType==='once'){task.targetDate=today;changed=true;}
+    }
+    if(changed){saveAllData();renderTodayTasks();renderCalendar();}
+};
+
+const closeAllMenus = () => document.querySelectorAll('.menu-dots.open').forEach(m=>m.classList.remove('open'));
+document.addEventListener('click', e=>{
+    if(!e.target.closest('.menu-dots')) closeAllMenus();
+    if(!e.target.closest('.dropdown-menu')) document.querySelectorAll('.dropdown-menu.open').forEach(m=>m.classList.remove('open'));
+});
+
+function sortTasks(tasks){
+    if(currentSort==='xp-desc') return[...tasks].sort((a,b)=>b.xpReward-a.xpReward);
+    if(currentSort==='xp-asc') return[...tasks].sort((a,b)=>a.xpReward-b.xpReward);
+    if(currentSort==='created-desc') return[...tasks].sort((a,b)=>b.createdAt-a.createdAt);
+    if(currentSort==='created-asc') return[...tasks].sort((a,b)=>a.createdAt-b.createdAt);
+    if(currentSort==='name-asc') return[...tasks].sort((a,b)=>a.name.localeCompare(b.name));
+    if(currentSort==='name-desc') return[...tasks].sort((a,b)=>b.name.localeCompare(a.name));
+    return tasks;
+}
+function applyCustomOrder(tasks,orderArray){
+    if(!orderArray.length) return tasks;
+    let ordered=[],taskMap=new Map(tasks.map(t=>[t.id,t]));
+    for(let id of orderArray) if(taskMap.has(id)){ordered.push(taskMap.get(id));taskMap.delete(id);}
+    ordered.push(...taskMap.values());
+    return ordered;
+}
+
+const renderTodayTasks = () => {
+    let today = getToday();
+    let allTasks = [...baseTasks, ...customTasks].filter(t => !t.hidden);
+
+    // Группируем задачи по категориям
+    const getTaskCat = t => t.categoryId || (t.id.toString().startsWith('base_') ? 'cat_daily' : 'cat_other');
+    let catMap = {};
+    for(let t of allTasks){
+        let cid = getTaskCat(t);
+        if(!catMap[cid]) catMap[cid] = [];
+        if(isTaskActiveOnDate(t, today)) catMap[cid].push(t);
+    }
+
+    // Порядок категорий: сначала из categories[], потом остальные
+    let orderedCats = [...categories];
+    for(let cid of Object.keys(catMap)){
+        if(!orderedCats.find(c=>c.id===cid)){
+            orderedCats.push({id:cid,emoji:'📦',name:cid,color:'#6b8c6b'});
+        }
+    }
+    // Только категории у которых есть задачи сегодня
+    orderedCats = orderedCats.filter(c => catMap[c.id]?.length > 0);
+
+    const container = document.getElementById('categoriesContainer');
+    container.innerHTML = '';
+
+    for(let cat of orderedCats){
+        let tasks = catMap[cat.id] || [];
+        if(!tasks.length) continue;
+
+        // Сортировка внутри категории
+        let sortedTasks = currentSort === 'manual' ? applyCustomOrder(tasks, [...importantOrder, ...normalOrder]) : sortTasks(tasks);
+        // Важные сверху
+        sortedTasks = [...sortedTasks.filter(t=>t.isImportant), ...sortedTasks.filter(t=>!t.isImportant)];
+
+        let doneCount = tasks.filter(t => t.completedDates?.includes(today)).length;
+        let pct = tasks.length ? Math.round(doneCount/tasks.length*100) : 0;
+        let isOpen = catOpenState[cat.id] !== false; // по умолчанию открыто
+
+        let block = document.createElement('div');
+        block.className = 'category-block' + (isOpen ? ' open' : '');
+        block.dataset.catId = cat.id;
+
+        // Шапка
+        let header = document.createElement('div');
+        header.className = 'category-header';
+        header.innerHTML = `
+            <span class="category-emoji">${cat.emoji}</span>
+            <span class="category-title">${cat.name}</span>
+            <span class="category-progress"><span class="done-count">${doneCount}</span>/${tasks.length}</span>
+            <span class="category-arrow">▼</span>`;
+        header.style.borderLeft = `3px solid ${cat.color}`;
+
+        // Мини-прогресс-бар
+        let miniBar = document.createElement('div');
+        miniBar.className = 'category-mini-bar';
+        miniBar.innerHTML = `<div class="category-mini-bar-fill" style="width:${pct}%;background:${cat.color};"></div>`;
+
+        // Тело
+        let body = document.createElement('div');
+        body.className = 'category-body';
+
+        for(let t of sortedTasks){
+            let isBase = t.id.toString().startsWith('base_');
+            let em = getEmoji(t, isBase);
+            let badge = t.isImportant ? '⚠️' : (t.autoRollover ? '↻' : '');
+            let completed = t.completedDates?.includes(today);
+            let dragHandle = currentSort==='manual' ? `<span class="drag-handle" title="Перетащить">⠿</span>` : '';
+            let counterCount = t.isCounter ? (t.counterCounts?.[today] || 0) : 0;
+
+            let taskEl = document.createElement('div');
+            taskEl.className = 'task' + (completed ? ' completed-task' : '');
+            taskEl.dataset.taskId = t.id;
+            taskEl.dataset.taskName = t.name;
+            taskEl.dataset.taskXp = t.xpReward;
+            taskEl.dataset.taskType = t.repeatType;
+            taskEl.dataset.taskWeekdays = JSON.stringify(t.weekdays||[]);
+            taskEl.dataset.taskTargetdate = t.targetDate||'';
+            taskEl.dataset.taskAutorollover = t.autoRollover;
+            taskEl.dataset.taskImportant = t.isImportant;
+            taskEl.dataset.taskIsbase = isBase;
+            taskEl.dataset.taskCreated = t.createdAt||Date.now();
+            taskEl.dataset.taskIscounter = t.isCounter||false;
+            if(completed) taskEl.style.opacity='0.5';
+
+            let actionsHTML = t.isCounter
+                ? `<div class="counter-inline" data-id="${t.id}" data-xp="${t.xpReward}" style="display:flex;align-items:center;gap:6px;">
+                       <button class="counter-btn counter-dec" style="font-size:18px;">−</button>
+                       <span class="counter-val" style="min-width:22px;text-align:center;font-size:16px;font-weight:600;color:var(--text-primary);">${counterCount}</span>
+                       <button class="counter-btn counter-inc">+</button>
+                       <button class="counter-btn counter-confirm" title="Подтвердить" style="background:${counterCount>0?'rgba(52,199,89,0.2)':'rgba(255,255,255,0.05)'};border-color:${counterCount>0?'rgba(52,199,89,0.5)':'var(--border-light)'};font-size:14px;">✓</button>
+                   </div>`
+                : `<label class="ios-switch"><input type="checkbox" class="task-checkbox" data-id="${t.id}" data-xp="${t.xpReward}" ${completed?'disabled checked':''}><span class="ios-slider"></span></label>`;
+
+            taskEl.innerHTML = `
+                ${dragHandle}
+                <div class="task-info"><span class="task-emoji${currentEmojiStyle==='minimal'?' minimal':''}">${em}</span><span class="task-name">${t.name}</span>${badge?`<span class="task-badge">${badge}</span>`:''}<span class="task-xp">${t.isCounter?`×${t.xpReward}`:`+${t.xpReward}`}</span>${t.isCounter&&counterCount>0?`<span class="task-counter-badge">×${counterCount} = +${counterCount*t.xpReward} XP</span>`:''}</div>
+                <div class="task-actions">
+                    ${actionsHTML}
+                    <div class="menu-dots"><button class="dots-btn">•••</button><div class="dots-menu"></div></div>
+                </div>`;
+            body.appendChild(taskEl);
+        }
+
+        // Кнопка добавить задание в категорию
+        let addBtn = document.createElement('button');
+        addBtn.className = 'cat-manage-btn';
+        addBtn.innerHTML = `+ добавить в «${cat.name}»`;
+        addBtn.onclick = () => openAddTaskModal(null, cat.id);
+        body.appendChild(addBtn);
+
+        header.onclick = () => {
+            let isNowOpen = block.classList.toggle('open');
+            catOpenState[cat.id] = isNowOpen;
+        };
+
+        block.appendChild(header);
+        block.appendChild(miniBar);
+        block.appendChild(body);
+        container.appendChild(block);
+
+        // Обработчики чекбоксов
+        body.querySelectorAll('.task-checkbox').forEach(cb=>{
+            cb.onclick=e=>e.stopPropagation();
+            cb.onchange=()=>{if(cb.checked){completeTask(cb.dataset.id,today,parseInt(cb.dataset.xp));cb.disabled=true;cb.closest('.task').style.opacity='0.5';}};
+        });
+
+        // Обработчики счётчика
+        body.querySelectorAll('.counter-inline').forEach(row=>{
+            let id=row.dataset.id, xp=parseInt(row.dataset.xp);
+            let task=[...baseTasks,...customTasks].find(t=>t.id.toString()===id);
+            if(!task) return;
+            let today2=getToday();
+            if(!task.counterCounts) task.counterCounts={};
+            let valEl=row.querySelector('.counter-val');
+            let confirmBtn=row.querySelector('.counter-confirm');
+            const getCount=()=>task.counterCounts[today2]||0;
+            const setCount=(n)=>{
+                n=Math.max(0,n); task.counterCounts[today2]=n; valEl.textContent=n;
+                confirmBtn.style.background=n>0?'rgba(52,199,89,0.2)':'rgba(255,255,255,0.05)';
+                confirmBtn.style.borderColor=n>0?'rgba(52,199,89,0.5)':'var(--border-light)';
+                saveAllData();
+                let badge=row.closest('.task').querySelector('.task-counter-badge');
+                if(n>0){if(badge){badge.textContent=`×${n} = +${n*xp} XP`;}else{let xpSpan=row.closest('.task').querySelector('.task-info');let b=document.createElement('span');b.className='task-counter-badge';b.textContent=`×${n} = +${n*xp} XP`;xpSpan&&xpSpan.appendChild(b);}}
+                else if(badge) badge.remove();
+            };
+            row.querySelector('.counter-dec').onclick=e=>{e.stopPropagation();setCount(getCount()-1);};
+            row.querySelector('.counter-inc').onclick=e=>{e.stopPropagation();setCount(getCount()+1);};
+            confirmBtn.onclick=e=>{
+                e.stopPropagation();
+                let count=getCount();
+                if(count<=0){alert('Введите количество раз (нажмите +)');return;}
+                if(task.completedDates?.includes(today2)){alert('Уже подтверждено сегодня');return;}
+                if(!task.completedDates) task.completedDates=[];
+                task.completedDates.push(today2);
+                currentXP+=xp*count; updateLevelAndXP(); saveAllData(); saveSnapshot(today2); renderTodayTasks(); renderCalendar();
+            };
+        });
+
+        // Обработчики меню •••
+        body.querySelectorAll('.task').forEach(div=>{
+            let menu=div.querySelector('.menu-dots'),dotsBtn=menu.querySelector('.dots-btn'),menuDiv=menu.querySelector('.dots-menu');
+            let id=div.dataset.taskId,name=div.dataset.taskName,xp=parseInt(div.dataset.taskXp);
+            let repeatType=div.dataset.taskType,weekdays=JSON.parse(div.dataset.taskWeekdays||'[]');
+            let targetDate=div.dataset.taskTargetdate,autoRollover=div.dataset.taskAutorollover==='true';
+            let isImportantTask=div.dataset.taskImportant==='true',isBase=div.dataset.taskIsbase==='true';
+            dotsBtn.onclick=e=>{e.stopPropagation();closeAllMenus();menu.classList.add('open');};
+            menuDiv.innerHTML=`
+                <div class="menu-item toggle-item"><div class="toggle-switch"><span>⚠️ Важное</span><div class="toggle-track ${isImportantTask?'active':''}" data-field="isImportant"></div></div></div>
+                <div class="menu-item toggle-item"><div class="toggle-switch"><span>↻ Переносить</span><div class="toggle-track ${autoRollover?'active':''}" data-field="autoRollover"></div></div></div>
+                <button class="edit-task">✎ Редактировать</button>
+                <button class="move-cat-task">📂 Сменить категорию</button>
+                <button class="delete-task">🗑 Удалить</button>
+                ${repeatType==='weekly'?`<button class="edit-weekdays">📅 Дни недели</button>`:''}
+            `;
+            menuDiv.querySelector('.edit-task').onclick=e=>{e.stopPropagation();openEditModal(id,name,xp,repeatType,weekdays,targetDate,isBase);menu.classList.remove('open');};
+            menuDiv.querySelector('.delete-task').onclick=e=>{e.stopPropagation();if(confirm("Удалить задание?"))deleteTaskById(id);menu.classList.remove('open');};
+            menuDiv.querySelector('.move-cat-task').onclick=e=>{e.stopPropagation();openMoveCatModal(id);menu.classList.remove('open');};
+            if(repeatType==='weekly') menuDiv.querySelector('.edit-weekdays').onclick=e=>{e.stopPropagation();openWeekdaysPopup(id,weekdays,isBase,menu);};
+            menuDiv.querySelectorAll('.toggle-track').forEach(toggle=>{
+                let field=toggle.dataset.field,val=field==='isImportant'?isImportantTask:autoRollover;
+                toggle.onclick=e=>{e.stopPropagation();updateTaskField(id,field,!val);};
+            });
+            if(isBase){
+                let resetBtn=document.createElement('button');
+                resetBtn.textContent='↺ Сбросить';
+                resetBtn.style.cssText='background:none;border:none;width:100%;text-align:left;padding:8px 16px;color:var(--text-muted);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;';
+                resetBtn.onmouseenter=()=>resetBtn.style.background='rgba(255,255,255,0.1)';
+                resetBtn.onmouseleave=()=>resetBtn.style.background='none';
+                resetBtn.onclick=e=>{
+                    e.stopPropagation();
+                    let def=BASE_DEFAULTS[id]; if(!def) return;
+                    let task=baseTasks.find(t=>t.id===id);
+                    if(task){task.name=def.name;task.xpReward=def.xpReward;task.repeatType=def.repeatType;task.hidden=false;delete task.weekdays;delete task.targetDate;task.emoji=undefined;saveAllData();renderTodayTasks();renderCalendar();}
+                    menu.classList.remove('open');
+                };
+                menuDiv.appendChild(resetBtn);
+            }
+        });
+    }
+
+    updateEmojiFilter();
+};
+
+function saveManualOrder(){
+    importantOrder=Array.from(document.querySelectorAll('#tasksContainerImportant .task')).map(el=>el.dataset.taskId);
+    normalOrder=Array.from(document.querySelectorAll('#tasksContainerNormal .task')).map(el=>el.dataset.taskId);
+    localStorage.setItem('importantOrder',JSON.stringify(importantOrder));
+    localStorage.setItem('normalOrder',JSON.stringify(normalOrder));
+}
+
+const openWeekdaysPopup=(id,currentWeekdays,isBase,menu)=>{
+    let existing=document.querySelector('.weekday-popup'); if(existing) existing.remove();
+    let popup=document.createElement("div"); popup.className="weekday-popup";
+    let weekdays=[...currentWeekdays];
+    popup.innerHTML=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d,i)=>`<button data-day="${i}" style="background:${weekdays.includes(i)?'var(--danger)':'var(--input-bg)'}">${d}</button>`).join('');
+    menu.querySelector('.dots-btn').after(popup);
+    popup.querySelectorAll('button').forEach(b=>{
+        b.onclick=e=>{e.stopPropagation();let d=parseInt(b.dataset.day);if(weekdays.includes(d))weekdays=weekdays.filter(x=>x!==d);else weekdays.push(d);b.style.background=weekdays.includes(d)?'var(--danger)':'var(--input-bg)';
+            let task=isBase?baseTasks.find(t=>t.id===id):customTasks.find(t=>t.id.toString()===id);
+            if(task){task.weekdays=weekdays;saveAllData();renderTodayTasks();renderCalendar();}
+        };
+    });
+    setTimeout(()=>document.addEventListener('click',()=>popup.remove(),{once:true}),10);
+};
+
+// Дефолтные значения базовых задач (для сброса)
+const BASE_DEFAULTS = {
+    'base_0':{name:'Утренняя зарядка',xpReward:150,repeatType:'daily'},
+    'base_1':{name:'Читать час',xpReward:200,repeatType:'daily'},
+    'base_2':{name:'Завтрак дома',xpReward:100,repeatType:'daily'},
+    'base_3':{name:'Обед дома',xpReward:100,repeatType:'daily'},
+    'base_4':{name:'Медитация 25 мин',xpReward:100,repeatType:'daily'},
+    'base_5':{name:'День без Инстаграма',xpReward:300,repeatType:'daily'},
+    'base_6':{name:'Дыхательная практика',xpReward:150,repeatType:'daily'}
+};
+
+const deleteTaskById = id=>{
+    if(id.startsWith('base_')){
+        // Для базовых — скрываем (помечаем как hidden), не удаляем насовсем
+        let task=baseTasks.find(t=>t.id===id);
+        if(task) task.hidden=true;
+    } else {
+        customTasks=customTasks.filter(t=>t.id.toString()!==id);
+    }
+    saveAllData();renderTodayTasks();renderCalendar();
+};
+
+const openEditModal=(id,name,xp,repeatType,weekdays,targetDate,isBase)=>{
+    let modal=document.createElement("div"),newWeekdays=[...weekdays];
+    modal.className="modal-overlay center-modal";
+    modal.innerHTML=`<div class="modal"><h3>Редактировать</h3><input id="editName" value="${name.replace(/"/g,'&quot;')}"><input id="editXP" type="number" value="${xp}"><select id="editType"><option value="daily" ${repeatType==='daily'?'selected':''}>Ежедневно</option><option value="weekly" ${repeatType==='weekly'?'selected':''}>По дням недели</option><option value="once" ${repeatType==='once'?'selected':''}>Назначить на дату</option></select><div id="weeklyOpt" class="weekday-selector" style="display:${repeatType==='weekly'?'flex':'none'}"></div><input type="date" id="dateOnce" value="${targetDate||''}" style="display:${repeatType==='once'?'block':'none'}"><div class="modal-buttons"><button id="saveEdit" class="btn-primary">Сохранить</button><button id="cancelEdit">Отмена</button></div></div>`;
+    document.body.appendChild(modal);
+    let typeSel=document.getElementById("editType"),weekDiv=document.getElementById("weeklyOpt"),dateInp=document.getElementById("dateOnce");
+    const updWeek=()=>{weekDiv.innerHTML=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d,i)=>`<button class="weekday-option ${newWeekdays.includes(i)?'active':''}" data-day="${i}">${d}</button>`).join('');
+        weekDiv.querySelectorAll('.weekday-option').forEach(b=>b.onclick=()=>{let d=parseInt(b.dataset.day);if(newWeekdays.includes(d))newWeekdays=newWeekdays.filter(x=>x!==d);else newWeekdays.push(d);b.classList.toggle('active',newWeekdays.includes(d));});
+    };
+    typeSel.onchange=()=>{if(typeSel.value==="weekly"){weekDiv.style.display="flex";dateInp.style.display="none";updWeek();}else if(typeSel.value==="once"){weekDiv.style.display="none";dateInp.style.display="block";}else{weekDiv.style.display="none";dateInp.style.display="none";}};
+    if(repeatType==='weekly') updWeek();
+    document.getElementById("saveEdit").onclick=()=>{
+        let nn=document.getElementById("editName").value.trim(),nx=parseInt(document.getElementById("editXP").value);
+        if(!nn||isNaN(nx)) return;
+        // Работаем и с базовыми, и с кастомными задачами одинаково
+        let task=isBase
+            ? baseTasks.find(t=>t.id===id)
+            : customTasks.find(t=>t.id.toString()===id);
+        if(task){
+            task.name=nn; task.xpReward=nx; task.repeatType=typeSel.value;
+            if(task.repeatType==='weekly') task.weekdays=newWeekdays; else delete task.weekdays;
+            if(task.repeatType==='once') task.targetDate=dateInp.value; else delete task.targetDate;
+            task.emoji=autoEmoji(nn);
+            saveAllData(); renderTodayTasks(); renderCalendar();
+        }
+        modal.remove();
+    };
+    document.getElementById("cancelEdit").onclick=()=>modal.remove();
+};
+
+// ===================== ПОШАГОВОЕ ДОБАВЛЕНИЕ ЗАДАНИЯ =====================
+const openAddTaskModal = (targetDate=null, presetCatId=null) => {
+    let state = {
+        name: '',
+        xp: 100,
+        repeatType: targetDate ? 'once' : 'daily',
+        weekdays: [],
+        targetDate: targetDate || getToday(),
+        isImportant: false,
+        autoRollover: false,
+        isCounter: false,
+        emoji: '✨',
+        categoryId: presetCatId || null
+    };
+    let step = 1;
+    const totalSteps = 6;
+
+    const modal = document.createElement("div");
+    modal.className = "modal-overlay";
+    document.body.appendChild(modal);
+
+    const renderStep = () => {
+        let stepsHTML = Array.from({length:totalSteps},(_,i)=>`<div class="wizard-step ${i+1<step?'done':i+1===step?'active':''}"></div>`).join('');
+
+        if (step === 1) {
+            modal.innerHTML = `<div class="modal">
+                <div class="wizard-steps">${stepsHTML}</div>
+                <h3>Новое задание</h3>
+                <p class="modal-subtitle">Шаг 1 из ${totalSteps} — Как называется задание?</p>
+                <input id="wName" placeholder="Например: Пить воду" value="${state.name}" autocomplete="off">
+                <div class="modal-buttons">
+                    <button id="wCancel">Отмена</button>
+                    <button id="wNext" class="btn-primary">Продолжить →</button>
+                </div>
+            </div>`;
+            const inp = document.getElementById('wName');
+            inp.focus();
+            inp.addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('wNext').click(); });
+            document.getElementById('wNext').onclick = () => {
+                let v = inp.value.trim();
+                if (!v) { inp.style.borderColor='var(--danger)'; return; }
+                state.name = v; state.emoji = autoEmoji(v); step=2; renderStep();
+            };
+            document.getElementById('wCancel').onclick = () => modal.remove();
+        }
+
+        else if (step === 2) {
+            modal.innerHTML = `<div class="modal">
+                <div class="wizard-steps">${stepsHTML}</div>
+                <h3>${state.emoji} ${state.name}</h3>
+                <p class="modal-subtitle">Шаг 2 из ${totalSteps} — Сколько очков опыта?</p>
+                <div class="xp-presets">
+                    <button class="xp-preset ${state.xp===50?'selected':''}" data-xp="50">50 XP</button>
+                    <button class="xp-preset ${state.xp===100?'selected':''}" data-xp="100">100 XP</button>
+                    <button class="xp-preset ${state.xp===150?'selected':''}" data-xp="150">150 XP</button>
+                    <button class="xp-preset ${state.xp===200?'selected':''}" data-xp="200">200 XP</button>
+                    <button class="xp-preset ${state.xp===300?'selected':''}" data-xp="300">300 XP</button>
+                </div>
+                <input id="wXP" type="number" placeholder="Своё значение" value="${state.xp}">
+                <div class="modal-buttons">
+                    <button id="wBack">← Назад</button>
+                    <button id="wNext" class="btn-primary">Продолжить →</button>
+                </div>
+            </div>`;
+            document.querySelectorAll('.xp-preset').forEach(btn => {
+                btn.onclick = () => { state.xp=parseInt(btn.dataset.xp); document.getElementById('wXP').value=state.xp; document.querySelectorAll('.xp-preset').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); };
+            });
+            document.getElementById('wXP').oninput = e => { state.xp=parseInt(e.target.value)||100; document.querySelectorAll('.xp-preset').forEach(b=>b.classList.toggle('selected',parseInt(b.dataset.xp)===state.xp)); };
+            document.getElementById('wNext').onclick = () => { let v=parseInt(document.getElementById('wXP').value); if(!v||v<=0) return; state.xp=v; step=3; renderStep(); };
+            document.getElementById('wBack').onclick = () => { step=1; renderStep(); };
+        }
+
+        else if (step === 3) {
+            let pickerHTML = '';
+            if (state.repeatType === 'once') {
+                pickerHTML = `<div id="datePickerWizard"></div>`;
+            } else if (state.repeatType === 'weekly') {
+                pickerHTML = `<div class="weekday-selector">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d,i)=>`<button class="weekday-option ${state.weekdays.includes(i)?'active':''}" data-day="${i}">${d}</button>`).join('')}</div>`;
+            }
+            modal.innerHTML = `<div class="modal">
+                <div class="wizard-steps">${stepsHTML}</div>
+                <h3>${state.emoji} ${state.name}</h3>
+                <p class="modal-subtitle">Шаг 3 из ${totalSteps} — Когда выполнять?</p>
+                <select id="wType">
+                    <option value="daily" ${state.repeatType==='daily'?'selected':''}>Каждый день</option>
+                    <option value="weekly" ${state.repeatType==='weekly'?'selected':''}>По дням недели</option>
+                    <option value="once" ${state.repeatType==='once'?'selected':''}>Конкретная дата</option>
+                </select>
+                <div id="wTypeExtra">${pickerHTML}</div>
+                <div class="modal-buttons">
+                    <button id="wBack">← Назад</button>
+                    <button id="wNext" class="btn-primary">Продолжить →</button>
+                </div>
+            </div>`;
+
+            const updateTypeExtra = () => {
+                let extra = document.getElementById('wTypeExtra');
+                let type = document.getElementById('wType').value;
+                state.repeatType = type;
+                if (type==='weekly') {
+                    extra.innerHTML=`<div class="weekday-selector">${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d,i)=>`<button class="weekday-option ${state.weekdays.includes(i)?'active':''}" data-day="${i}">${d}</button>`).join('')}</div>`;
+                    extra.querySelectorAll('.weekday-option').forEach(b=>b.onclick=()=>{let d=parseInt(b.dataset.day);if(state.weekdays.includes(d))state.weekdays=state.weekdays.filter(x=>x!==d);else state.weekdays.push(d);b.classList.toggle('active',state.weekdays.includes(d));});
+                } else if (type==='once') {
+                    extra.innerHTML=`<div id="datePickerWizard"></div>`;
+                    createDatePicker(document.getElementById('datePickerWizard'), d=>state.targetDate=d, state.targetDate);
+                } else {
+                    extra.innerHTML='';
+                }
+            };
+            document.getElementById('wType').onchange = updateTypeExtra;
+            if (state.repeatType==='weekly') {
+                document.querySelectorAll('.weekday-option').forEach(b=>b.onclick=()=>{let d=parseInt(b.dataset.day);if(state.weekdays.includes(d))state.weekdays=state.weekdays.filter(x=>x!==d);else state.weekdays.push(d);b.classList.toggle('active',state.weekdays.includes(d));});
+            } else if (state.repeatType==='once') {
+                createDatePicker(document.getElementById('datePickerWizard'), d=>state.targetDate=d, state.targetDate);
+            }
+            document.getElementById('wNext').onclick = () => {
+                if(state.repeatType==='weekly'&&!state.weekdays.length){alert("Выберите хотя бы один день");return;}
+                step=4; renderStep();
+            };
+            document.getElementById('wBack').onclick = () => { step=2; renderStep(); };
+        }
+
+        else if (step === 4) {
+            modal.innerHTML = `<div class="modal">
+                <div class="wizard-steps">${stepsHTML}</div>
+                <h3>${state.emoji} ${state.name}</h3>
+                <p class="modal-subtitle">Шаг 4 из ${totalSteps} — Особые условия</p>
+                <div class="wizard-toggle-row">
+                    <div class="wizard-toggle-info">
+                        <div class="wizard-toggle-label">⚠️ Важное задание</div>
+                        <div class="wizard-toggle-desc">За невыполнение снимается опыт</div>
+                    </div>
+                    <div class="toggle-track ${state.isImportant?'active':''}" id="wImportant"></div>
+                </div>
+                <div class="wizard-toggle-row">
+                    <div class="wizard-toggle-info">
+                        <div class="wizard-toggle-label">↻ Переносить</div>
+                        <div class="wizard-toggle-desc">Если не выполнено — переносится на следующий день</div>
+                    </div>
+                    <div class="toggle-track ${state.autoRollover?'active':''}" id="wRollover"></div>
+                </div>
+                <div class="wizard-toggle-row">
+                    <div class="wizard-toggle-info">
+                        <div class="wizard-toggle-label">🔢 Счётчик повторений</div>
+                        <div class="wizard-toggle-desc">XP × количество раз (например: 3 отклика = 3× XP)</div>
+                    </div>
+                    <div class="toggle-track ${state.isCounter?'active':''}" id="wCounter"></div>
+                </div>
+                <div class="modal-buttons">
+                    <button id="wBack">← Назад</button>
+                    <button id="wNext" class="btn-primary">Продолжить →</button>
+                </div>
+            </div>`;
+            document.getElementById('wImportant').onclick = () => { state.isImportant=!state.isImportant; document.getElementById('wImportant').classList.toggle('active',state.isImportant); };
+            document.getElementById('wRollover').onclick = () => { state.autoRollover=!state.autoRollover; document.getElementById('wRollover').classList.toggle('active',state.autoRollover); };
+            document.getElementById('wCounter').onclick = () => { state.isCounter=!state.isCounter; document.getElementById('wCounter').classList.toggle('active',state.isCounter); };
+            document.getElementById('wNext').onclick = () => { step=5; renderStep(); };
+            document.getElementById('wBack').onclick = () => { step=3; renderStep(); };
+        }
+
+        else if (step === 5) {
+            // Шаг 5 — выбор категории
+            let catBtns = categories.map(c=>`
+                <button class="cat-pick-btn ${state.categoryId===c.id?'selected':''}" data-cid="${c.id}" style="border-color:${c.color};${state.categoryId===c.id?`background:${c.color}22;`:''}">
+                    <span>${c.emoji}</span> ${c.name}
+                </button>`).join('');
+            modal.innerHTML = `<div class="modal">
+                <div class="wizard-steps">${stepsHTML}</div>
+                <h3>${state.emoji} ${state.name}</h3>
+                <p class="modal-subtitle">Шаг 5 из ${totalSteps} — Выберите категорию</p>
+                <div class="cat-pick-grid">${catBtns}</div>
+                <div class="modal-buttons">
+                    <button id="wBack">← Назад</button>
+                    <button id="wNext" class="btn-primary">Продолжить →</button>
+                </div>
+            </div>`;
+            modal.querySelectorAll('.cat-pick-btn').forEach(btn=>{
+                btn.onclick=()=>{
+                    state.categoryId=btn.dataset.cid;
+                    modal.querySelectorAll('.cat-pick-btn').forEach(b=>{
+                        let c=categories.find(x=>x.id===b.dataset.cid);
+                        b.classList.toggle('selected',b.dataset.cid===state.categoryId);
+                        b.style.background=b.dataset.cid===state.categoryId?(c?c.color+'22':'rgba(255,255,255,0.08)'):'';
+                    });
+                };
+            });
+            document.getElementById('wNext').onclick = () => { step=6; renderStep(); };
+            document.getElementById('wBack').onclick = () => { step=4; renderStep(); };
+        }
+
+        else if (step === 6) {
+            const repeatLabel = state.repeatType==='daily'?'Каждый день':state.repeatType==='weekly'?`По дням: ${["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].filter((_,i)=>state.weekdays.includes(i)).join(', ')}`:formatDate(state.targetDate);
+            modal.innerHTML = `<div class="modal">
+                <div class="wizard-steps">${stepsHTML}</div>
+                <h3>Готово!</h3>
+                <p class="modal-subtitle">Шаг 6 из ${totalSteps} — Проверьте задание</p>
+                <div class="task-preview">
+                    <div class="task-preview-title">${state.emoji} ${state.name}</div>
+                    <div class="task-preview-row"><span>Опыт</span><span>+${state.xp} XP</span></div>
+                    <div class="task-preview-row"><span>Расписание</span><span>${repeatLabel}</span></div>
+                    <div class="task-preview-row"><span>Важное</span><span>${state.isImportant?'✅ Да':'Нет'}</span></div>
+                    <div class="task-preview-row"><span>Перенос</span><span>${state.autoRollover?'✅ Да':'Нет'}</span></div>
+                    ${state.isCounter?`<div class="task-preview-row"><span>Счётчик</span><span>🔢 XP × кол-во раз</span></div>`:''}
+                </div>
+                <div class="modal-buttons">
+                    <button id="wBack">← Назад</button>
+                    <button id="wAdd" class="btn-primary">✓ Добавить</button>
+                </div>
+            </div>`;
+            document.getElementById('wAdd').onclick = () => {
+                let newTask={id:nextTaskId++,name:state.name,xpReward:state.xp,repeatType:state.repeatType,autoRollover:state.autoRollover,isImportant:state.isImportant,isCounter:state.isCounter||false,completedDates:[],createdAt:Date.now(),emoji:state.emoji,categoryId:state.categoryId||null};
+                if(state.repeatType==='weekly') newTask.weekdays=[...state.weekdays];
+                if(state.repeatType==='once') newTask.targetDate=state.targetDate;
+                customTasks.push(newTask);
+                if(targetDate&&state.repeatType==='once') completeTask(newTask.id.toString(),targetDate,state.xp);
+                saveAllData();renderTodayTasks();renderCalendar();
+                modal.remove();
+            };
+            document.getElementById('wBack').onclick = () => { step=5; renderStep(); };
+        }
+    };
+
+    renderStep();
+};
+
+// Мини-календарь для выбора даты
+let currentPickerDate = new Date();
+function createDatePicker(container, onSelect, initialDate) {
+    let selectedDate = initialDate || getToday();
+    let pickerDate = initialDate ? new Date(initialDate) : new Date();
+    const render = () => {
+        let y=pickerDate.getFullYear(), m=pickerDate.getMonth();
+        let first=new Date(y,m,1), off=first.getDay()===0?6:first.getDay()-1;
+        let daysInMonth=new Date(y,m+1,0).getDate();
+        container.innerHTML=`<div class="date-picker-calendar"><div class="calendar-header"><button class="cal-nav pp">◀</button><span style="color:var(--text-primary);font-size:13px;">${monthNames[m]} ${y}</span><button class="cal-nav np">▶</button></div><div class="calendar-weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div class="calendar-days" id="pdDays"></div></div>`;
+        let dc=container.querySelector('#pdDays');
+        for(let i=0;i<off;i++) dc.appendChild(document.createElement('div'));
+        for(let d=1;d<=daysInMonth;d++){
+            let key=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            let el=document.createElement('div'); el.className='calendar-day'+(key===selectedDate?' selected':''); el.innerHTML=`<span>${d}</span>`;
+            el.onclick=()=>{selectedDate=key;onSelect(key);render();};
+            dc.appendChild(el);
+        }
+        container.querySelector('.pp').onclick=e=>{e.stopPropagation();pickerDate.setMonth(pickerDate.getMonth()-1);render();};
+        container.querySelector('.np').onclick=e=>{e.stopPropagation();pickerDate.setMonth(pickerDate.getMonth()+1);render();};
+    };
+    render();
+}
+
+const openManageTasksModal = () => {
+    let allTasks=[...baseTasks,...customTasks], modal=document.createElement("div");
+    modal.className="modal-overlay center-modal";
+    modal.innerHTML=`<div class="modal" style="max-width:500px;"><h3>Управление заданиями</h3><div id="tasksList" style="max-height:400px;overflow-y:auto;"></div><div class="modal-buttons"><button id="closeManage">Закрыть</button></div></div>`;
+    document.body.appendChild(modal);
+    let listDiv=document.getElementById("tasksList");
+    listDiv.innerHTML="";
+    for(let task of allTasks){
+        let isBase=task.id.toString().startsWith('base_');
+        listDiv.innerHTML+=`<div class="manage-task-item"><div class="manage-task-info"><div class="manage-task-name">${task.name}</div><div class="manage-task-meta">+${task.xpReward} XP • ${task.repeatType}</div></div><div class="manage-task-buttons"><button class="edit-task-manage" data-id="${task.id}" data-name="${task.name.replace(/"/g,'&quot;')}" data-xp="${task.xpReward}" data-type="${task.repeatType}" data-weekdays='${JSON.stringify(task.weekdays||[])}' data-targetdate="${task.targetDate||''}" data-isbase="${isBase}">✎</button><button class="delete-task-manage" data-id="${task.id}">🗑</button></div></div>`;
+    }
+    document.querySelectorAll('.edit-task-manage').forEach(btn=>{btn.onclick=()=>{openEditModal(btn.dataset.id,btn.dataset.name,parseInt(btn.dataset.xp),btn.dataset.type,JSON.parse(btn.dataset.weekdays),btn.dataset.targetdate,btn.dataset.isbase==='true');modal.remove();};});
+    document.querySelectorAll('.delete-task-manage').forEach(btn=>{btn.onclick=()=>{if(confirm("Удалить задание?"))deleteTaskById(btn.dataset.id);modal.remove();openManageTasksModal();};});
+    // Показываем скрытые базовые задачи (если есть)
+    let hiddenBase=baseTasks.filter(t=>t.hidden);
+    if(hiddenBase.length){
+        let restoreSection=document.createElement('div');
+        restoreSection.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light);';
+        restoreSection.innerHTML=`<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;">Скрытые задания</div>`
+            +hiddenBase.map(t=>`<div class="manage-task-item" style="opacity:0.55;">
+                <div class="manage-task-info"><div class="manage-task-name">${t.name}</div><div class="manage-task-meta">скрыто</div></div>
+                <div class="manage-task-buttons"><button class="restore-task-manage" data-id="${t.id}" style="background:transparent;border:1px solid var(--ios-green);color:var(--ios-green);padding:4px 12px;border-radius:30px;cursor:pointer;font-size:13px;">↺</button></div>
+            </div>`).join('');
+        listDiv.appendChild(restoreSection);
+        restoreSection.querySelectorAll('.restore-task-manage').forEach(btn=>{
+            btn.onclick=()=>{
+                let task=baseTasks.find(t=>t.id===btn.dataset.id);
+                if(task){task.hidden=false;saveAllData();renderTodayTasks();renderCalendar();}
+                modal.remove();openManageTasksModal();
+            };
+        });
+    }
+    document.getElementById("closeManage").onclick=()=>modal.remove();
+};
+
+const openMoveCatModal = (taskId) => {
+    let task = [...baseTasks,...customTasks].find(t=>t.id.toString()===taskId);
+    if(!task) return;
+    let modal = document.createElement('div');
+    modal.className = 'modal-overlay center-modal';
+    let catBtns = categories.map(c=>`
+        <button class="cat-pick-btn ${task.categoryId===c.id?'selected':''}" data-cid="${c.id}"
+            style="border-color:${c.color};${task.categoryId===c.id?`background:${c.color}22;`:''}">
+            <span>${c.emoji}</span> ${c.name}
+        </button>`).join('');
+    modal.innerHTML = `<div class="modal"><h3>Выберите категорию</h3>
+        <div class="cat-pick-grid" style="margin:12px 0;">${catBtns}</div>
+        <div class="modal-buttons"><button id="cancelMoveCat">Отмена</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.querySelectorAll('.cat-pick-btn').forEach(btn=>{
+        btn.onclick=()=>{
+            task.categoryId=btn.dataset.cid;
+            saveAllData(); renderTodayTasks();
+            modal.remove();
+        };
+    });
+    document.getElementById('cancelMoveCat').onclick=()=>modal.remove();
+};
+
+const openManageCategoriesModal = () => {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay center-modal';
+    const render = () => {
+        let catRows = categories.map((c,i)=>`
+            <div class="manage-task-item" data-cid="${c.id}">
+                <div class="manage-task-info" style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:20px;">${c.emoji}</span>
+                    <div>
+                        <div class="manage-task-name">${c.name}</div>
+                        <div class="manage-task-meta" style="color:${c.color};">■ цвет</div>
+                    </div>
+                </div>
+                <div class="manage-task-buttons">
+                    ${!c.locked?`<button class="edit-cat-btn" data-idx="${i}" style="background:transparent;border:1px solid var(--border-light);color:var(--text-primary);padding:4px 12px;border-radius:30px;cursor:pointer;font-size:13px;">✎</button>
+                    <button class="del-cat-btn" data-idx="${i}" style="background:transparent;border:1px solid var(--danger);color:var(--danger);padding:4px 12px;border-radius:30px;cursor:pointer;font-size:13px;">🗑</button>`
+                    :'<span style="font-size:11px;color:var(--text-muted);padding:4px 8px;">базовая</span>'}
+                </div>
+            </div>`).join('');
+        modal.innerHTML = `<div class="modal" style="max-width:460px;">
+            <h3>Категории</h3>
+            <div style="max-height:360px;overflow-y:auto;margin-bottom:12px;">${catRows}</div>
+            <button id="addNewCatBtn" style="width:100%;padding:10px;border:1px dashed var(--border-light);background:none;color:var(--text-muted);border-radius:20px;cursor:pointer;font-size:13px;margin-bottom:12px;">+ Новая категория</button>
+            <div class="modal-buttons"><button id="closeCatManage">Закрыть</button></div>
+        </div>`;
+        document.getElementById('closeCatManage').onclick=()=>modal.remove();
+        document.getElementById('addNewCatBtn').onclick=()=>openCatEditModal(null,()=>{render();});
+        modal.querySelectorAll('.edit-cat-btn').forEach(btn=>{
+            btn.onclick=()=>openCatEditModal(parseInt(btn.dataset.idx),()=>{render();});
+        });
+        modal.querySelectorAll('.del-cat-btn').forEach(btn=>{
+            btn.onclick=()=>{
+                let idx=parseInt(btn.dataset.idx);
+                let cid=categories[idx].id;
+                if(confirm(`Удалить категорию «${categories[idx].name}»?
+Задания перейдут в «Разное»`)){
+                    // Переназначаем задания в разное
+                    [...baseTasks,...customTasks].forEach(t=>{if(t.categoryId===cid)t.categoryId='cat_other';});
+                    categories.splice(idx,1);
+                    saveAllData(); renderTodayTasks(); render();
+                }
+            };
+        });
+    };
+    document.body.appendChild(modal);
+    render();
+};
+
+const openCatEditModal = (idx, onSave) => {
+    let isNew = idx === null;
+    let cat = isNew
+        ? {id:'cat_'+Date.now(), emoji:'📌', name:'', color:CAT_COLORS[0], locked:false}
+        : {...categories[idx]};
+    let pickedColor = cat.color;
+
+    let m = document.createElement('div');
+    m.className = 'modal-overlay center-modal';
+    let swatches = CAT_COLORS.map(c=>`<div class="color-swatch ${c===pickedColor?'selected':''}" data-color="${c}" style="background:${c};"></div>`).join('');
+    let emojis = ['📌','🔁','💪','💼','🧠','🧘','⭐','📦','🏃','🍎','💡','🎯','🎨','🌿','🔥','💧','📚','🏠','🎵','🌙'];
+    let emojiPicker = emojis.map(e=>`<button class="emoji-pick-btn ${e===cat.emoji?'selected':''}" data-e="${e}" style="font-size:20px;background:${e===cat.emoji?'rgba(255,255,255,0.15)':'none'};border:1px solid ${e===cat.emoji?'var(--border-light)':'transparent'};border-radius:10px;padding:4px 6px;cursor:pointer;">${e}</button>`).join('');
+
+    m.innerHTML = `<div class="modal"><h3>${isNew?'Новая категория':'Редактировать'}</h3>
+        <input id="catNameInp" placeholder="Название категории" value="${cat.name}" autocomplete="off">
+        <div style="margin:10px 0 6px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;">Эмодзи</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;">${emojiPicker}</div>
+        <div style="margin:0 0 6px;font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;">Цвет</div>
+        <div class="color-swatches">${swatches}</div>
+        <div class="modal-buttons">
+            <button id="cancelCatEdit">Отмена</button>
+            <button id="saveCatEdit" class="btn-primary">Сохранить</button>
+        </div>
+    </div>`;
+    document.body.appendChild(m);
+
+    m.querySelectorAll('.color-swatch').forEach(sw=>{
+        sw.onclick=()=>{pickedColor=sw.dataset.color;m.querySelectorAll('.color-swatch').forEach(s=>{s.classList.toggle('selected',s.dataset.color===pickedColor);});};
+    });
+    m.querySelectorAll('.emoji-pick-btn').forEach(btn=>{
+        btn.onclick=()=>{cat.emoji=btn.dataset.e;m.querySelectorAll('.emoji-pick-btn').forEach(b=>{b.style.background=b.dataset.e===cat.emoji?'rgba(255,255,255,0.15)':'none';b.style.borderColor=b.dataset.e===cat.emoji?'var(--border-light)':'transparent';});};
+    });
+    document.getElementById('cancelCatEdit').onclick=()=>m.remove();
+    document.getElementById('saveCatEdit').onclick=()=>{
+        let n=document.getElementById('catNameInp').value.trim();
+        if(!n){document.getElementById('catNameInp').style.borderColor='var(--danger)';return;}
+        cat.name=n; cat.color=pickedColor;
+        if(isNew) categories.push(cat);
+        else categories[idx]={...cat};
+        saveAllData(); renderTodayTasks();
+        m.remove(); onSave&&onSave();
+    };
+};
+
+// ===================== ИСТОРИЯ — все задания за день с маркировкой =====================
+const openHistoryModal = () => {
+    let today=getToday(), allTasks=[...baseTasks,...customTasks];
+
+    // Собираем все даты где были активные задания
+    let allDates = new Set();
+    for(let task of allTasks){
+        for(let d of (task.completedDates||[])) allDates.add(d);
+        // Добавляем последние 14 дней для ежедневных
+        if(task.repeatType==='daily'){
+            for(let i=0;i<14;i++){let dt=new Date();dt.setDate(dt.getDate()-i);allDates.add(dt.toISOString().split('T')[0]);}
+        }
+    }
+    let sortedDates=[...allDates].sort((a,b)=>b.localeCompare(a));
+
+    // Статистика для вкладок
+    let statsAll={}, statsLevel={}, statsToday={};
+    for(let task of allTasks){
+        for(let d of(task.completedDates||[])){
+            statsAll[task.name]=(statsAll[task.name]||0)+1;
+            if(d>=levelStartDate) statsLevel[task.name]=(statsLevel[task.name]||0)+1;
+            if(d===today) statsToday[task.name]=(statsToday[task.name]||0)+1;
+        }
+    }
+
+    let modal=document.createElement("div");
+    modal.className="modal-overlay center-modal";
+    modal.innerHTML=`<div class="modal" style="max-width:440px;"><h3>История</h3>
+        <div class="history-tabs">
+            <button class="history-tab active" data-tab="log">📅 По датам</button>
+            <button class="history-tab" data-tab="today">Сегодня</button>
+            <button class="history-tab" data-tab="level">Уровень</button>
+            <button class="history-tab" data-tab="alltime">Всё время</button>
+        </div>
+        <div id="historyContent" class="history-list"></div>
+        <div class="modal-buttons"><button id="closeHistory">Закрыть</button></div>
+    </div>`;
+    document.body.appendChild(modal);
+
+    const renderTab = tab => {
+        let content=document.getElementById("historyContent");
+        if(tab==='log'){
+            // Показываем все задания за каждый день с маркировкой
+            // Для прошлых дней — читаем снапшот (не зависит от обновлений кода)
+            let html='';
+            for(let date of sortedDates.slice(0,60)){
+                let isPastDate = date < today;
+                let snap = isPastDate ? getSnapshot(date) : null;
+
+                let displayTasks; // [{name, xpReward, done}]
+                if(snap){
+                    displayTasks = snap;
+                } else {
+                    let dayTasks = getAllTasksForDate(date);
+                    if(!dayTasks.length) continue;
+                    displayTasks = dayTasks.map(t=>({
+                        name: t.name, xpReward: t.xpReward,
+                        done: !!(t.completedDates && t.completedDates.includes(date))
+                    }));
+                }
+                if(!displayTasks.length) continue;
+
+                let label=date===today?'Сегодня':date===getPrevDay(today)?'Вчера':formatDate(date);
+                let doneCount=displayTasks.filter(t=>t.done).length;
+                html+=`<div class="history-section-title">${label} <span style="color:var(--ios-green);font-weight:500;">${doneCount}/${displayTasks.length}</span></div>`;
+                for(let t of displayTasks){
+                    html+=`<div class="history-date-entry ${t.done?'done':'missed'}">
+                        <div class="history-entry-left">
+                            <div class="history-status-dot ${t.done?'done':'missed'}"></div>
+                            <span class="history-entry-name">${t.name}</span>
+                        </div>
+                        <span class="history-entry-right ${t.done?'done':'missed'}">${t.done?`+${t.xpReward} XP`:'не выполнено'}</span>
+                    </div>`;
+                }
+            }
+            content.innerHTML=html||"<div style='text-align:center;color:var(--text-muted);padding:20px;'>Нет данных</div>";
+        } else {
+            let stats=tab==='today'?statsToday:(tab==='level'?statsLevel:statsAll);
+            let entries=Object.entries(stats).sort((a,b)=>b[1]-a[1]);
+            if(!entries.length){content.innerHTML="<div style='text-align:center;color:var(--text-muted);padding:20px;'>Нет выполненных заданий</div>";return;}
+            content.innerHTML=entries.map(([n,c])=>`<div class="history-stat-item"><span>${n}</span><span class="history-count">${c} раз</span></div>`).join('');
+        }
+    };
+
+    renderTab('log');
+    document.querySelectorAll('.history-tab').forEach(tab=>{
+        tab.onclick=()=>{document.querySelectorAll('.history-tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');renderTab(tab.dataset.tab);};
+    });
+    document.getElementById("closeHistory").onclick=()=>modal.remove();
+};
+
+// КАЛЕНДАРЬ
+let calDate=new Date();
+const renderCalendar=()=>{
+    let y=calDate.getFullYear(),m=calDate.getMonth();
+    document.getElementById("monthYear").innerText=`${monthNames[m]} ${y}`;
+    let first=new Date(y,m,1),off=first.getDay()===0?6:first.getDay()-1,days=new Date(y,m+1,0).getDate();
+    let container=document.getElementById("calendarDays"); container.innerHTML="";
+    for(let i=0;i<off;i++) container.appendChild(document.createElement("div"));
+    for(let d=1;d<=days;d++){
+        let key=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        let today=getToday(), isPast=key<today;
+        let snap = isPast ? getSnapshot(key) : null;
+
+        let completedCount, totalCount, importantMissed;
+        if(snap){
+            completedCount = snap.filter(s=>s.done).length;
+            totalCount = snap.length;
+            importantMissed = false; // снапшот уже зафиксирован, штрафы учтены
+        } else {
+            let allDayTasks=getAllTasksForDate(key);
+            completedCount=allDayTasks.filter(t=>t.completedDates?.includes(key)).length;
+            totalCount=allDayTasks.length;
+            importantMissed=allDayTasks.some(t=>t.isImportant&&!t.autoRollover&&!t.completedDates?.includes(key)&&key<today);
+        }
+
+        let isToday=key===today, isSelected=key===selectedCalDate;
+        let day=document.createElement("div");
+        day.className="calendar-day"+(totalCount>0?" has-tasks":"")+(importantMissed?" has-penalty":"")+(isToday?" today":"")+(isSelected?" selected-day":"");
+        day.innerHTML=completedCount>0&&totalCount>0?`<span>${d}</span><span style="position:absolute;bottom:2px;right:3px;font-size:8px;color:var(--ios-green);opacity:0.8">${Math.round(completedCount/totalCount*100)}%</span>`:`<span>${d}</span>`;
+        day.onclick=()=>{selectedCalDate=key;renderCalendar();showDayDetails(key);};
+        container.appendChild(day);
+    }
+};
+
+const formatDayLabel=(date)=>{
+    let today=getToday(),yesterday=getPrevDay(today);
+    if(date===today) return 'Сегодня';
+    if(date===yesterday) return 'Вчера';
+    let [y,m,d]=date.split('-');
+    let months=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+    return `${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+};
+
+const buildDaySummaryHTML=(dateLabel, earnedXP, doneCount, total)=>{
+    let xpClass=earnedXP>0?'':'zero';
+    return `<div class="day-summary">
+        <div>
+            <div class="day-summary-date">${dateLabel}</div>
+            <div class="day-summary-stats">${doneCount} из ${total} заданий выполнено</div>
+        </div>
+        <div class="day-summary-xp ${xpClass}">${earnedXP>0?'+'+earnedXP+' XP':'0 XP'}</div>
+    </div>`;
+};
+
+const showDayDetails=(date)=>{
+    let detailsDiv=document.getElementById("dayDetails");
+    let today=getToday(), isFuture=date>today, isPast=date<today;
+    let dateLabel=formatDayLabel(date);
+
+    // Для прошлых дней — читаем снапшот
+    let snap = isPast ? getSnapshot(date) : null;
+
+    if(snap){
+        let doneItems=snap.filter(s=>s.done);
+        let missedItems=snap.filter(s=>!s.done);
+        let earnedXP=doneItems.reduce((sum,s)=>sum+s.xpReward,0);
+        let summary=buildDaySummaryHTML(dateLabel, earnedXP, doneItems.length, snap.length);
+
+        let doneHTML='', missedHTML='';
+        if(doneItems.length){
+            doneHTML=`<div class="day-section-label">✓ Выполнено</div>`
+                +doneItems.map(s=>`<div class="day-detail-item done-item">
+                    <span class="day-detail-name">${s.emoji||'📌'} ${s.name}</span>
+                    <span class="day-detail-done">+${s.xpReward} XP</span>
+                </div>`).join('');
+        }
+        if(missedItems.length){
+            missedHTML=`<div class="day-section-label">✗ Пропущено</div>`
+                +missedItems.map(s=>`<div class="day-detail-item missed-item">
+                    <span class="day-detail-name">${s.emoji||'📌'} ${s.name}</span>
+                    <span class="day-detail-miss">−${s.xpReward}</span>
+                </div>`).join('');
+        }
+        detailsDiv.innerHTML=summary+doneHTML+missedHTML
+            +`<button class="day-add-btn" data-date="${date}" style="margin-top:10px;">+ Добавить задание</button>`;
+        detailsDiv.querySelectorAll('.day-add-btn').forEach(btn=>btn.onclick=()=>openAddTaskModal(btn.dataset.date));
+        return;
+    }
+
+    // Сегодня / будущие / прошлые без снапшота
+    let allDayTasks=getAllTasksForDate(date);
+    if(allDayTasks.length===0){
+        detailsDiv.innerHTML=`<div style="text-align:center;color:var(--text-muted);padding:8px;">Нет заданий<br>
+            <button class="day-add-btn" data-date="${date}" style="margin-top:8px;">+ Добавить задание на этот день</button></div>`;
+        detailsDiv.querySelectorAll('.day-add-btn').forEach(btn=>btn.onclick=()=>openAddTaskModal(btn.dataset.date));
+        return;
+    }
+
+    let doneItems=allDayTasks.filter(t=>t.completedDates?.includes(date));
+    let missedItems=allDayTasks.filter(t=>!t.completedDates?.includes(date));
+    let earnedXP=doneItems.reduce((sum,t)=>sum+t.xpReward,0);
+    let summary=buildDaySummaryHTML(dateLabel, earnedXP, doneItems.length, allDayTasks.length);
+
+    let doneHTML='', pendingHTML='';
+    if(doneItems.length){
+        doneHTML=`<div class="day-section-label">✓ Выполнено</div>`
+            +doneItems.map(t=>`<div class="day-detail-item done-item">
+                <span class="day-detail-name">${t.emoji||'📌'} ${t.name}</span>
+                <span class="day-detail-done">+${t.xpReward} XP</span>
+            </div>`).join('');
+    }
+    if(missedItems.length){
+        let sectionLabel=isFuture?'Запланировано':isPast?'✗ Пропущено':'Осталось';
+        pendingHTML=`<div class="day-section-label">${sectionLabel}</div>`
+            +missedItems.map(t=>{
+                let canComplete=!isFuture;
+                return `<div class="day-detail-item ${isPast?'missed-item':''}">
+                    <span class="day-detail-name">${t.emoji||'📌'} ${t.name}</span>
+                    ${canComplete
+                        ?`<button class="complete-past-btn" data-id="${t.id}" data-xp="${t.xpReward}" data-date="${date}">+${t.xpReward} ✓</button>`
+                        :`<span style="font-size:11px;color:var(--text-muted);">+${t.xpReward}</span>`}
+                </div>`;
+            }).join('');
+    }
+
+    detailsDiv.innerHTML=summary+doneHTML+pendingHTML
+        +`<button class="day-add-btn" data-date="${date}" style="margin-top:10px;">+ Добавить задание</button>`;
+    detailsDiv.querySelectorAll('.complete-past-btn').forEach(btn=>{
+        btn.onclick=()=>{let ok=completeTask(btn.dataset.id,btn.dataset.date,parseInt(btn.dataset.xp));if(ok)showDayDetails(date);};
+    });
+    detailsDiv.querySelectorAll('.day-add-btn').forEach(btn=>btn.onclick=()=>openAddTaskModal(btn.dataset.date));
+};
+
+const updateEmojiFilter=()=>{
+    const isLight=document.body.classList.contains('light');
+    document.querySelectorAll('.task-emoji').forEach(el=>{
+        // Обновляем класс minimal
+        el.classList.toggle('minimal', currentEmojiStyle==='minimal');
+
+        if(currentEmojiStyle==='bw-normal'){
+            el.style.filter='grayscale(1) brightness(1.1) contrast(1.2)';
+            el.style.color='';
+        } else if(currentEmojiStyle==='minimal'){
+            // Цвет управляется через CSS body:not(.light) / body.light
+            el.style.filter='none';
+            el.style.color='';
+        } else {
+            el.style.filter='';
+            el.style.color='';
+        }
+    });
+};
+
+const saveAllData=()=>{
+    localStorage.setItem("userTotalXP",currentXP);
+    localStorage.setItem("levelStartXP",levelStartXP);
+    localStorage.setItem("levelStartDate",levelStartDate);
+    localStorage.setItem("customTasks",JSON.stringify(customTasks));
+    localStorage.setItem("nextTaskId",nextTaskId);
+    localStorage.setItem("emojiStyle",currentEmojiStyle);
+    localStorage.setItem("penaltyProcessedDates",JSON.stringify(penaltyProcessedDates));
+    localStorage.setItem("sortMode",currentSort);
+    localStorage.setItem("importantOrder",JSON.stringify(importantOrder));
+    localStorage.setItem("normalOrder",JSON.stringify(normalOrder));
+    // Сохраняем базовые задачи целиком (включая правки имени/xp/расписания)
+    localStorage.setItem('baseTasks_overrides', JSON.stringify(baseTasks.map(t=>({id:t.id,name:t.name,xpReward:t.xpReward,repeatType:t.repeatType,weekdays:t.weekdays,targetDate:t.targetDate,isImportant:t.isImportant,autoRollover:t.autoRollover,emoji:t.emoji,completedDates:t.completedDates,createdAt:t.createdAt}))));
+    // Сохраняем счётчики для кастомных задач
+    for(let t of customTasks) if(t.isCounter) localStorage.setItem(`counter_${t.id}_counts`,JSON.stringify(t.counterCounts||{}));
+    // Сохраняем категории
+    localStorage.setItem('userCategories', JSON.stringify(categories));
+};
+
+const loadAllData=()=>{
+    currentXP=parseInt(localStorage.getItem("userTotalXP"))||0;
+    levelStartXP=parseInt(localStorage.getItem("levelStartXP"))||0;
+    levelStartDate=localStorage.getItem("levelStartDate")||getToday();
+    customTasks=JSON.parse(localStorage.getItem("customTasks")||"[]");
+    // Загружаем категории: берём DEFAULT_CATEGORIES как основу, мерджим сохранённые
+    let savedCats=JSON.parse(localStorage.getItem('userCategories')||'null');
+    if(savedCats){
+        categories=savedCats;
+        // Убеждаемся что locked-категории всегда присутствуют
+        for(let dc of DEFAULT_CATEGORIES){
+            if(dc.locked && !categories.find(c=>c.id===dc.id)) categories.unshift(dc);
+        }
+    } else {
+        categories=[...DEFAULT_CATEGORIES];
+    }
+    nextTaskId=parseInt(localStorage.getItem("nextTaskId"))||(customTasks.length?Math.max(...customTasks.map(t=>t.id))+1:1);
+    let savedStyle=localStorage.getItem("emojiStyle");
+    if(savedStyle&&['colorful','bw-normal','minimal'].includes(savedStyle)) currentEmojiStyle=savedStyle;
+    penaltyProcessedDates=JSON.parse(localStorage.getItem("penaltyProcessedDates")||"{}");
+    let savedSort=localStorage.getItem("sortMode");
+    if(savedSort&&['manual','xp-desc','xp-asc','created-desc','created-asc','name-asc','name-desc'].includes(savedSort)) currentSort=savedSort;
+    importantOrder=JSON.parse(localStorage.getItem("importantOrder")||"[]");
+    normalOrder=JSON.parse(localStorage.getItem("normalOrder")||"[]");
+    // Восстанавливаем правки базовых задач (имя, xp, расписание, completedDates)
+    let baseOverrides=JSON.parse(localStorage.getItem('baseTasks_overrides')||'[]');
+    for(let t of baseTasks){
+        let saved=baseOverrides.find(o=>o.id===t.id);
+        if(saved){
+            t.name=saved.name; t.xpReward=saved.xpReward; t.repeatType=saved.repeatType;
+            if(saved.weekdays) t.weekdays=saved.weekdays; else delete t.weekdays;
+            if(saved.targetDate) t.targetDate=saved.targetDate; else delete t.targetDate;
+            t.isImportant=saved.isImportant||false; t.autoRollover=saved.autoRollover||false;
+            if(saved.emoji) t.emoji=saved.emoji;
+            t.completedDates=saved.completedDates||[];
+            t.createdAt=saved.createdAt||Date.now()-500000;
+        } else {
+            // Нет правок — грузим только completedDates из старого формата (обратная совместимость)
+            let oldSaved=localStorage.getItem(`base_${t.id}_completed`);
+            t.completedDates=oldSaved?JSON.parse(oldSaved):[];
+            t.createdAt=t.createdAt||Date.now()-500000;
+        }
+    }
+    for(let t of customTasks){
+        if(!t.createdAt) t.createdAt=Date.now();
+        if(t.isCounter){let saved=localStorage.getItem(`counter_${t.id}_counts`);t.counterCounts=saved?JSON.parse(saved):{};}
+    }
+    document.querySelectorAll('.dropdown-option').forEach(opt=>{
+        if(opt.dataset.sort&&opt.dataset.sort===currentSort){opt.classList.add('active');opt.querySelector('.check').innerHTML='✓';}
+        else if(opt.dataset.style&&opt.dataset.style===currentEmojiStyle){opt.classList.add('active');opt.querySelector('.check').innerHTML='✓';}
+        else{opt.classList.remove('active');opt.querySelector('.check').innerHTML='';}
+    });
+    updateLevelAndXP();applyPenalties();rolloverTasks();
+    migrateSnapshots(); // миграция существующих данных
+    renderTodayTasks();renderCalendar();
+    // Сохраняем снапшот сегодняшнего дня при каждой загрузке
+    saveSnapshot(getToday());
+};
+
+const setSortMode=mode=>{currentSort=mode;saveAllData();renderTodayTasks();};
+
+// ===================== ЭКСПОРТ / ИМПОРТ =====================
+const exportProgress = () => {
+    let data = {};
+    for(let k of Object.keys(localStorage)) data[k] = localStorage.getItem(k);
+    let json = JSON.stringify(data, null, 2);
+    let blob = new Blob([json], {type:'application/json'});
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
+    let date = new Date().toISOString().slice(0,10);
+    a.href = url; a.download = `progressia_backup_${date}.json`;
+    a.click(); URL.revokeObjectURL(url);
+};
+
+const importProgress = (file) => {
+    if(!file) return;
+    let reader = new FileReader();
+    reader.onload = e => {
+        try {
+            let data = JSON.parse(e.target.result);
+            let keys = Object.keys(data);
+            if(!keys.length) throw new Error('Пустой файл');
+            if(!confirm(`Импортировать ${keys.length} записей?\nТекущие данные будут заменены.`)) return;
+            localStorage.clear();
+            for(let [k,v] of Object.entries(data)) localStorage.setItem(k,v);
+            // Сброс in-memory состояния
+            for(let t of baseTasks) t.completedDates=[];
+            loadAllData();
+            alert('✓ Прогресс восстановлен!');
+        } catch(err) {
+            alert('Ошибка: файл повреждён или неверный формат.\n'+err.message);
+        }
+    };
+    reader.readAsText(file);
+};
+const setEmojiStyle=style=>{currentEmojiStyle=style;saveAllData();renderTodayTasks();renderCalendar();};
+
+const initTheme=()=>{
+    let saved=localStorage.getItem('theme'),btn=document.getElementById('themeToggle');
+    if(saved==='light'){document.body.classList.add('light');btn.innerHTML='<span class="moon-icon"></span>';}
+    else{document.body.classList.remove('light');btn.innerHTML='<span class="sun-icon"></span>';}
+    updateEmojiFilter();
+};
+const toggleTheme=()=>{
+    let btn=document.getElementById('themeToggle');
+    if(document.body.classList.contains('light')){document.body.classList.remove('light');localStorage.setItem('theme','dark');btn.innerHTML='<span class="sun-icon"></span>';}
+    else{document.body.classList.add('light');localStorage.setItem('theme','light');btn.innerHTML='<span class="moon-icon"></span>';}
+    updateEmojiFilter();
+};
+
+document.getElementById("menuBtn").onclick=()=>{document.getElementById("sidebar").classList.add("open");document.getElementById("overlay").classList.add("open");};
+document.getElementById("closeSidebar").onclick=()=>{document.getElementById("sidebar").classList.remove("open");document.getElementById("overlay").classList.remove("open");};
+document.getElementById("overlay").onclick=()=>{document.getElementById("sidebar").classList.remove("open");document.getElementById("overlay").classList.remove("open");};
+document.getElementById("prevMonth").onclick=()=>{calDate.setMonth(calDate.getMonth()-1);renderCalendar();};
+document.getElementById("nextMonth").onclick=()=>{calDate.setMonth(calDate.getMonth()+1);renderCalendar();};
+document.getElementById("resetBtn").onclick=()=>{
+    if(confirm("⚠️ Внимание!\n\nВесь прогресс, XP, уровни и выполненные задания будут удалены безвозвратно.\n\nПродолжить?")){
+        currentXP=0;customTasks=[];nextTaskId=1;penaltyProcessedDates={};levelStartXP=0;levelStartDate=getToday();importantOrder=[];normalOrder=[];
+        for(let t of baseTasks) t.completedDates=[];
+        // Удаляем все снапшоты и сбрасываем флаг миграции
+        Object.keys(localStorage).filter(k=>k.startsWith('snapshot_')).forEach(k=>localStorage.removeItem(k));
+        localStorage.removeItem('snapshots_migrated');
+        saveAllData();updateLevelAndXP();renderTodayTasks();renderCalendar();
+    }
+};
+document.getElementById("openAddTaskModal").onclick=()=>openAddTaskModal();
+document.getElementById("themeToggle").onclick=()=>toggleTheme();
+document.getElementById("manageTasksBtn").onclick=()=>openManageTasksModal();
+document.getElementById("exportBtn").onclick=()=>exportProgress();
+document.getElementById("importFile").onchange=e=>importProgress(e.target.files[0]);
+document.getElementById("manageCatsBtn").onclick=()=>openManageCategoriesModal();
+document.getElementById("levelBox").onclick=()=>openHistoryModal();
+
+const sortMenu=document.getElementById('sortMenu'),sortTrigger=document.getElementById('sortTrigger');
+sortTrigger.onclick=e=>{e.stopPropagation();sortMenu.classList.toggle('open');};
+document.querySelectorAll('#sortDropdown .dropdown-option').forEach(opt=>{opt.onclick=()=>{setSortMode(opt.dataset.sort);sortMenu.classList.remove('open');};});
+
+const emojiStyleMenu=document.getElementById('emojiStyleMenu'),emojiStyleTrigger=document.getElementById('emojiStyleTrigger');
+emojiStyleTrigger.onclick=e=>{e.stopPropagation();emojiStyleMenu.classList.toggle('open');};
+document.querySelectorAll('#emojiStyleDropdown .dropdown-option').forEach(opt=>{opt.onclick=()=>{setEmojiStyle(opt.dataset.style);emojiStyleMenu.classList.remove('open');};});
+
+initTheme();
+loadAllData();
+</script>
+</body>
+</html>
